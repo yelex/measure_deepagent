@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(docs/меры_автоагент_2.xlsx)",
+      "Write(docs/меры_автоагент_2.xlsx)",
+      "Edit(scripts/score_against_golden.py)",
+      "Write(scripts/score_against_golden.py)",
+      "Edit(data/output/tuning_log.jsonl)",
+      "Write(data/output/tuning_log.jsonl)",
+      "Edit(data/output/review_queue.json)",
+      "Write(data/output/review_queue.json)",
+      "Bash(rm *меры_автоагент_2.xlsx*)",
+      "Bash(rm *score_against_golden.py*)",
+      "Bash(rm *tuning_log.jsonl*)",
+      "Bash(rm *review_queue.json*)",
+      "Bash(mv *меры_автоагент_2.xlsx*)",
+      "Bash(mv *score_against_golden.py*)",
+      "Bash(sed -i* scripts/score_against_golden.py*)",
+      "Bash(sed -i* docs/меры_автоагент_2.xlsx*)"
+    ]
+  }
+}
