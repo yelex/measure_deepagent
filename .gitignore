@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+data/output/ralph_runs/
+data/output/*.log
+data/output/trace_measure_*.md
+data/output/full_run_*.log
