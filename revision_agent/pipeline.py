@@ -130,3 +130,58 @@ def run_vbd_seed(seed: dict) -> dict:
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
     )
+
+
+def extract_svo_college_meal_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Бесплатное питание в
+    колледжах" (77_svo_10), источник cntd.ru/document/1300860766 (Указ
+    Мэра Москвы "О дополнительных мерах социальной поддержки...").
+
+    measureTerms — реально найден в тексте (п.1.5 указа, дословно про
+    бесплатное горячее питание студентам СПО). categoryContractor и
+    categoryVolunteer подтверждаются преамбулой указа (явно перечисляет
+    "заключивших контракт..." и "добровольцев"); kidsOfMilitary=1, т.к.
+    вся статья 1 указа — про детей этих категорий. categoryMobilized
+    сознательно НЕ проставляется в 1: в преамбуле указа "мобилизованные"
+    ни разу не упомянуты (только контрактники и добровольцы) — эталон
+    считает эту меру применимой и к мобилизованным, но это текстом указа
+    не подтверждается, честнее оставить 0/не найдено, чем скопировать
+    ответ из эталона. department не найден в тексте указа (это,
+    вероятно, из другого источника — msupport.dszn.ru, там текст не
+    в HTML, а в PDF на Яндекс.Диске, не парсили в этой итерации).
+    """
+    terms = None
+    m = re.search(
+        r"(Предоставление бесплатного одноразового горячего питания[^.]+\.)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
+    has_volunteer = "доброволь" in page_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 1,
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
+def run_svo_seed(seed: dict) -> dict:
+    """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
+    if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
+        page_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_svo_college_meal_card(seed, page_text)
+    raise NotImplementedError(
+        f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
+        "добавь новую в отдельной ralph-итерации, не угадывай молча."
+    )

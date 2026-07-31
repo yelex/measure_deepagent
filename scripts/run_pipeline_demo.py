@@ -16,20 +16,28 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from revision_agent.export_cards import write_agent_export
-from revision_agent.pipeline import run_vbd_seed
+from revision_agent.pipeline import run_svo_seed, run_vbd_seed
 
 REGISTRY_PATH = REPO_ROOT / "data" / "measures_registry.json"
 EXPORT_PATH = REPO_ROOT / "data" / "output" / "agent_cards_export.json"
+
+# По одной run_*_seed функции на ЖС — нет ещё справочника для "инвалиды"
+# (см. IMPROVEMENT_BACKLOG.md B003), поэтому её пока нет в этом dict.
+RUNNERS = {
+    "вбд": run_vbd_seed,
+    "сво": run_svo_seed,
+}
 
 
 def main():
     registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
     cards_by_ls = {"вбд": [], "сво": [], "инвалиды": []}
 
-    for seed in registry.get("вбд", []):
-        card = run_vbd_seed(seed)
-        cards_by_ls["вбд"].append(card)
-        print(f"[вбд] обработана мера: {seed['measureName']!r} <- {seed['npaUrl']}")
+    for ls, runner in RUNNERS.items():
+        for seed in registry.get(ls, []):
+            card = runner(seed)
+            cards_by_ls[ls].append(card)
+            print(f"[{ls}] обработана мера: {seed['measureName']!r} <- {seed['npaUrl']}")
 
     write_agent_export(cards_by_ls, EXPORT_PATH)
     print(f"Экспорт записан в {EXPORT_PATH}")

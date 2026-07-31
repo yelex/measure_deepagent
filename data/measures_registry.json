@@ -6,6 +6,12 @@
       "npaUrl": "https://aeroexpress.ru/aero/info/benefits.html"
     }
   ],
-  "сво": [],
+  "сво": [
+    {
+      "region": "Москва",
+      "measureName": "Бесплатное питание в колледжах",
+      "npaUrl": "https://docs.cntd.ru/document/1300860766"
+    }
+  ],
   "инвалиды": []
 }
