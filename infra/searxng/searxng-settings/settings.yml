@@ -1,0 +1,14 @@
+use_default_settings: true
+
+general:
+  instance_name: "searxng-npa-spike"
+
+server:
+  secret_key: "npa-spike-local-only-not-a-real-secret"
+  limiter: false
+  image_proxy: false
+
+search:
+  formats:
+    - html
+    - json

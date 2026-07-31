@@ -1,0 +1,11 @@
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng_measure_deepagent
+    ports:
+      - "8082:8080"  # 8081 занят на этой машине другим процессом
+    volumes:
+      - ./searxng-settings:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8082/
+    restart: unless-stopped
