@@ -49,6 +49,12 @@
       "measureName": "Компенсация усыновившим ребёнка-инвалида",
       "npaUrl": "https://docs.cntd.ru/document/3662941",
       "amountsUrl": "https://docs.cntd.ru/document/1314770295"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Выплата опекунам, попечителям, приёмным родителям, патронатным воспитателям на содержание детей-инвалидов",
+      "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-poluchit-vyplaty-usynovitelyam-opekunam-priemnym-roditelyam/",
+      "amountsUrl": "https://docs.cntd.ru/document/1314770295"
     }
   ]
 }

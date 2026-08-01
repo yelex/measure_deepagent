@@ -666,6 +666,104 @@ def extract_disability_adopted_child_card(seed: dict, law_text: str, amounts_tex
     }
 
 
+def extract_disability_guardian_content_card(seed: dict, mos_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Выплата опекунам, попечителям, приёмным
+    родителям, патронатным воспитателям на содержание детей-инвалидов"
+    (`77_8`), два независимых источника:
+
+    - `mos_text` — mos.ru, FAQ-страница (НЕ pgu2-лендинг, как для
+      77_2/77_5, а `otvet-socialnaya-podderjka`-страница) "Как получить
+      выплаты усыновителям, опекунам, приемным родителям", найдена через
+      SearXNG. Ответ на вопрос "Как получить средства на содержание
+      ребенка, находящегося под опекой (попечительством) или переданного
+      в приемную семью?" (`"id":1650` внутри встроенного в `<script>`
+      JSON — та же техника unicode-escape, что и на cntd.ru/pgu2-лендингах,
+      см. `_unescape_js_unicode`) даёт реальный текст условия и
+      подтверждает категорию получателей (опекуны/попечители/приёмные
+      родители, дети-сироты и оставшиеся без попечения родителей).
+    - `amounts_text` — то же Постановление Правительства Москвы №3025-ПП
+      (document/1314770295), уже используемое для 77_1/2/3/4/5/6, раздел
+      2.4 "Выплата ежемесячных денежных средств опекунам, попечителям,
+      приемным родителям, патронатным воспитателям на содержание:" —
+      название раздела совпадает почти дословно с `measureName` эталона.
+      Подпункт 2.4.5 "каждого ребенка-инвалида из числа детей-сирот и
+      детей, оставшихся без попечения родителей" → 40767 (в отличие от
+      2.4.1-2.4.4, которые про НЕ-инвалидов — матчинг ищет блок
+      "2.4 ... до 2.5", чтобы взять именно инвалид-строку 2.4.5, не
+      соседние).
+
+    Базовый закон 3662941 (используется как второй источник для
+    77_1/3/4/6) проверен и НЕ подходит здесь: полнотекстовый поиск
+    "опекун"/"патронат"/"приемн"/"на содержание" в его тексте не даёт
+    совпадений, относящихся к этой мере — закон её просто не называет.
+    Отсюда второй источник — mos.ru FAQ, а не закон, аналогично роли
+    mos.ru-лендингов в 77_2/77_5.
+
+    Группа инвалидности (I/II/III) источником не называется (речь о
+    статусе "ребёнок-инвалид" в целом) → `measure_*_group` остаются
+    `None`, заполнен только `measure_disabled_child`/`cause_disabled_child`
+    — как в 77_2/77_3/77_4/77_6. `department` — ни один из двух
+    источников не называет конкретное ведомство применительно именно к
+    этой строке (mos.ru упоминает несколько разных органов на разных
+    этапах оформления — приёмная кампания, банк, семейный центр — без
+    единого "ответственного органа" для этой конкретной выплаты, как это
+    было в JSON-структуре лендингов 77_2/77_5) → оставлен `None`, не
+    угадывается.
+    """
+    amounts_norm = re.sub(r"\s+", " ", amounts_text)
+
+    block_match = re.search(
+        r"2\.4 Выплата ежемесячных.*?2\.5 Ежемесячное", amounts_norm, re.DOTALL
+    )
+    block_2_4 = block_match.group(0) if block_match else ""
+
+    terms = None
+    m = re.search(r'"id":1650,"text":"<p>([^<]+)</p>', mos_text)
+    if m:
+        terms = re.sub(r"\s+", " ", m.group(1)).strip()
+
+    sum_confirmed = (
+        "на содержание ребенка, находящегося под опекой" in mos_text
+        and "денежные средства на питание, одежду, обувь" in mos_text
+        and "ребенка-инвалида из числа детей-сирот и детей, оставшихся без попечения родителей 40767" in block_2_4
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 0,
+        "cause_war_trauma": 0,
+        "cause_radiation": 0,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": None,
+        "measure_second_group": None,
+        "measure_third_group": None,
+        "measure_disabled_child": 40767,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
@@ -686,6 +784,10 @@ def run_disability_seed(seed: dict) -> dict:
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
         return extract_disability_nonworking_parents_card(seed, mos_text, amounts_text)
+    if seed["npaUrl"] == "https://www.mos.ru/otvet-socialnaya-podderjka/kak-poluchit-vyplaty-usynovitelyam-opekunam-priemnym-roditelyam/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        return extract_disability_guardian_content_card(seed, mos_text, amounts_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
