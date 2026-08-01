@@ -71,10 +71,18 @@
 ## 4. Прогони eval
 
 ```bash
-.venv/bin/python scripts/score_against_golden.py --agent-export data/output/agent_cards_export.json --note "<backlog-id>: до изменения"
+pyenv exec python3 scripts/score_against_golden.py --agent-export data/output/agent_cards_export.json --note "<backlog-id>: до изменения"
 # ... вносишь изменение ...
-.venv/bin/python scripts/score_against_golden.py --agent-export data/output/agent_cards_export.json --note "<backlog-id>: после изменения"
+pyenv exec python3 scripts/score_against_golden.py --agent-export data/output/agent_cards_export.json --note "<backlog-id>: после изменения"
 ```
+
+**Не используй голый `python3` или `.venv/bin/python`** — на этой машине
+Homebrew-сборки Python (3.11/3.12/3.14) имеют ABI-рассинхрон
+`pyexpat`/`libexpat` (падает `import openpyxl` и любой `pip install`), а
+`pyenv shims` не всегда попадают в PATH автономной сессии. `pyenv exec
+python3` явно резолвится в рабочий интерпретатор (pyenv 3.12.0,
+openpyxl уже установлен) в обход этой проблемы — см.
+`IMPROVEMENT_BACKLOG.md` B006 для полной истории и диагностики.
 
 Выгрузка карточек (`--agent-export`) — JSON-файл, формат которого
 зафиксирован в docstring `scripts/score_against_golden.py` (список

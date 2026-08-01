@@ -4,6 +4,7 @@
     "Bash(git *)",
     "Bash(python3*)",
     "Bash(.venv/bin/python*)",
+    "Bash(pyenv*)",
     "Bash(curl*)",
     "Bash(docker*)",
     "WebSearch",

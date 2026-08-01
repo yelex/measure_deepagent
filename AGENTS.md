@@ -16,7 +16,12 @@ LangGraph, ReAct-цикл + структурный верификатор с о�
 
 ## Стек
 
-- **Python 3.12**, venv в `.venv/`
+- **Python 3.12**, venv в `.venv/`. На этой машине голый `python3`/
+  `.venv/bin/python` может резолвиться в Homebrew-сборку с
+  ABI-рассинхроном `pyexpat`/`libexpat` (падает `openpyxl`, `pip`) — см.
+  `IMPROVEMENT_BACKLOG.md` B006. Используй `pyenv exec python3` (или
+  создавай `.venv` явно через `pyenv exec python3 -m venv .venv`), пока
+  это не починено на уровне хоста
 - **deepagents** (`create_deep_agent`) — harness: planning, filesystem
   backend, subagents, skills, memory, human-in-the-loop
 - **LangGraph** — рантайм под капотом deepagents
