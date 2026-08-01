@@ -37,6 +37,12 @@
       "measureName": "Компенсация в связи с ростом стоимости жизни отдельным категориям семей с детьми",
       "npaUrl": "https://docs.cntd.ru/document/3662941",
       "amountsUrl": "https://docs.cntd.ru/document/1314770295"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Компенсация на возмещение роста стоимости продуктов питания отдельным категориям граждан",
+      "npaUrl": "https://docs.cntd.ru/document/3662941",
+      "amountsUrl": "https://docs.cntd.ru/document/1314770295"
     }
   ]
 }

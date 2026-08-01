@@ -90,6 +90,22 @@
       "measurePeriodicity": "ежемесячно",
       "measureTerms": "на детей в возрасте до 1,5 лет, родители которых являются инвалидами и (или) пенсионерами",
       "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "cause_general_disease": 0,
+      "cause_war_trauma": 0,
+      "cause_radiation": 0,
+      "cause_disabled_child": 1,
+      "measureName": "Компенсация на возмещение роста стоимости продуктов питания отдельным категориям граждан",
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": 1004,
+      "measurePeriodicity": "ежемесячно",
+      "measureTerms": "на детей до 3 лет: одиноким матерям, многодетным семьям, семьям с детьми-инвалидами, семьям военнослужащих, проходящих военную службу по призыву, семьям, в которых один из родителей уклоняется от уплаты алиментов",
+      "department": null
     }
   ]
 }

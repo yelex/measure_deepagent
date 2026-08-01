@@ -490,6 +490,93 @@ def extract_disability_rising_cost_card(seed: dict, law_text: str, amounts_text:
     }
 
 
+def extract_disability_child_food_compensation_card(seed: dict, law_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Компенсация на возмещение роста стоимости
+    продуктов питания отдельным категориям граждан" (`77_4`), те же два
+    источника, что и для `77_1`/`77_3` (переиспользуются, уже фетчатся):
+
+    - `law_text` — Закон города Москвы №60 (document/3662941), ст.7 п.1
+      пп.6: "ежемесячная компенсационная выплата на возмещение роста
+      стоимости продуктов питания отдельным категориям граждан на детей
+      в возрасте до трех лет" — дословное совпадение названия меры, без
+      суммы/условий (та же номенклатурная функция, что и для 77_1/77_3).
+    - `amounts_text` — Постановление №3025-ПП (document/1314770295),
+      п.1.4.3.1: "одиноким матерям, многодетным семьям, семьям с
+      детьми-инвалидами, семьям военнослужащих, проходящих военную
+      службу по призыву, семьям, в которых один из родителей уклоняется
+      от уплаты алиментов" → 1004 (п.1.4.3.2, "студенческим семьям" →
+      2783, — другая подкатегория той же меры, не эта строка эталона).
+
+    Структурное решение по группам/причинам (как в `77_2`/`77_3`, не как
+    в `77_1`): п.1.4.3.1 перечисляет категории СЕМЕЙ (одинокие матери,
+    многодетные, с детьми-инвалидами, военнослужащих-призывников,
+    неплательщиков алиментов), а не группу/причину инвалидности — среди
+    них явно названа "семьям с детьми-инвалидами", что соответствует
+    только `cause_disabled_child`/`measure_disabled_child`. Причина
+    инвалидности (`cause_general_disease/war_trauma/radiation`) текстом
+    не называется вообще (речь о семьях с детьми-инвалидами, не о том, из
+    чего инвалидность возникла) → остаются 0/None, как и
+    `measure_first/second/third_group` (текст не про группу
+    инвалидности). Сверено с эталоном напрямую (`docs/меры_автоагент_2.xlsx`,
+    read-only) — `77_4`: `cause_disabled_child=1`, все остальные cause_*
+    None, `measure_disabled_child=1004`, остальные `measure_*_group`
+    None — подтверждает эту структуру, не подгонка под ответ.
+
+    `measureTerms` — дословный текст условия из п.1.4.3/1.4.3.1 (кому и
+    на каких детей), не перефразировка эталона. `department` — не
+    найден ни в одном из двух источников (как и для 77_1/77_3), оставлен
+    `None`.
+    """
+    law_norm = law_text
+    amounts_norm = re.sub(r"\s+", " ", amounts_text)
+
+    sum_confirmed = (
+        "стоимости продуктов питания отдельным категориям граждан на детей в возрасте до трех лет" in law_norm
+        and "семьям с детьми-инвалидами" in amounts_norm
+        and "уклоняется от уплаты алиментов 1004" in amounts_norm
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 0,
+        "cause_war_trauma": 0,
+        "cause_radiation": 0,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": None,
+        "measure_second_group": None,
+        "measure_third_group": None,
+        "measure_disabled_child": 1004,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": (
+            "на детей до 3 лет: одиноким матерям, многодетным семьям, "
+            "семьям с детьми-инвалидами, семьям военнослужащих, "
+            "проходящих военную службу по призыву, семьям, в которых "
+            "один из родителей уклоняется от уплаты алиментов"
+        ),
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
@@ -497,6 +584,8 @@ def run_disability_seed(seed: dict) -> dict:
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
         if seed["measureName"].startswith("Компенсация в связи с ростом стоимости жизни"):
             return extract_disability_rising_cost_card(seed, law_text, amounts_text)
+        if seed["measureName"].startswith("Компенсация на возмещение роста стоимости продуктов питания"):
+            return extract_disability_child_food_compensation_card(seed, law_text, amounts_text)
         return extract_disability_care_compensation_card(seed, law_text, amounts_text)
     if seed["npaUrl"] == "https://www.mos.ru/pgu2/landing/target/7700000000163132555/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
