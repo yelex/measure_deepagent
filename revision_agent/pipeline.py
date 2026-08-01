@@ -577,6 +577,95 @@ def extract_disability_child_food_compensation_card(seed: dict, law_text: str, a
     }
 
 
+def extract_disability_adopted_child_card(seed: dict, law_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Компенсация усыновившим ребёнка-инвалида"
+    (`77_6`). В отличие от 77_1/77_3/77_4, здесь `law_text` (закон
+    №3662941) НЕ называет эту выплату дословно ни в ст.6 (единовременные
+    выплаты), ни в ст.7 (ежемесячные выплаты) — полнотекстовый поиск
+    "усынов"/"удочер" рядом с "инвалид" в законе не даёт совпадений.
+    Вместо номенклатуры закон делегирует выплаты детям-сиротам/оставшимся
+    без попечения родителей отдельному закону в ст.4 ("Закон города
+    Москвы от 30 ноября 2005 года № 61") и называет орган назначения в
+    ст.5 ("уполномоченным Правительством Москвы исполнительным органом").
+
+    Поэтому `law_text` здесь выполняет ДРУГУЮ функцию, чем в 77_1/3/4: не
+    подтверждает название/сумму меры, а подтверждает легальную рамку
+    (категория получателя — дети-сироты/оставшиеся без попечения
+    родителей, тот же круг лиц, что и в amounts_text) и факт делегирования
+    размера выплаты Правительству Москвы. Реальные название меры, условие
+    и сумма — целиком из `amounts_text` (Постановление №3025-ПП,
+    document/1314770295), п.2.12: "Ежемесячная компенсационная выплата
+    лицам, усыновившим (удочерившим) на территории города Москвы после 1
+    января 2009 г. ребенка-сироту или ребенка, оставшегося без попечения
+    родителей", пп.2.12.3 "на каждого ребенка-инвалида" → 40767.
+
+    Важно: рядом есть пп.2.13.3 ("...усыновившим... троих и более
+    детей... на каждого ребенка-инвалида") — та же сумма 40767, но другая
+    категория (не соответствует терминам эталона `77_6`, там нет условия
+    "трое и более"). Матчинг ищет весь блок "2.12 ... до 2.13", чтобы не
+    спутать эти два пункта.
+
+    Группа инвалидности (I/II/III) источником не называется (речь о
+    статусе "ребёнок-инвалид" в целом, не о степени) → `measure_*_group`
+    остаются `None`, заполнен только `measure_disabled_child`/
+    `cause_disabled_child` — как в прецедентах 77_2/77_3/77_4.
+    `department` — не найден дословно ни в одном источнике (ст.5 закона
+    называет орган обобщённо, без имени ведомства) → остаётся `None`.
+    """
+    law_norm = law_text
+    amounts_norm = re.sub(r"\s+", " ", amounts_text)
+
+    block_match = re.search(
+        r"2\.12\s+Ежемесячная.*?2\.13\s+Ежемесячная", amounts_norm, re.DOTALL
+    )
+    block_2_12 = block_match.group(0) if block_match else ""
+
+    sum_confirmed = (
+        "детей-сирот и детей, оставшихся без попечения родителей" in law_norm
+        and "усыновившим (удочерившим) на территории города Москвы после 1 января 2009 г." in block_2_12
+        and "ребенка-инвалида 40767" in block_2_12
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 0,
+        "cause_war_trauma": 0,
+        "cause_radiation": 0,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": None,
+        "measure_second_group": None,
+        "measure_third_group": None,
+        "measure_disabled_child": 40767,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": (
+            "Усыновившим (удочерившим) на территории города Москвы после "
+            "1 января 2009 г. ребенка-инвалида из числа детей-сирот или "
+            "детей, оставшихся без попечения родителей"
+        ),
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
@@ -586,6 +675,8 @@ def run_disability_seed(seed: dict) -> dict:
             return extract_disability_rising_cost_card(seed, law_text, amounts_text)
         if seed["measureName"].startswith("Компенсация на возмещение роста стоимости продуктов питания"):
             return extract_disability_child_food_compensation_card(seed, law_text, amounts_text)
+        if seed["measureName"].startswith("Компенсация усыновившим ребёнка-инвалида"):
+            return extract_disability_adopted_child_card(seed, law_text, amounts_text)
         return extract_disability_care_compensation_card(seed, law_text, amounts_text)
     if seed["npaUrl"] == "https://www.mos.ru/pgu2/landing/target/7700000000163132555/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)

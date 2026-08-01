@@ -106,6 +106,22 @@
       "measurePeriodicity": "ежемесячно",
       "measureTerms": "на детей до 3 лет: одиноким матерям, многодетным семьям, семьям с детьми-инвалидами, семьям военнослужащих, проходящих военную службу по призыву, семьям, в которых один из родителей уклоняется от уплаты алиментов",
       "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "cause_general_disease": 0,
+      "cause_war_trauma": 0,
+      "cause_radiation": 0,
+      "cause_disabled_child": 1,
+      "measureName": "Компенсация усыновившим ребёнка-инвалида",
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": 40767,
+      "measurePeriodicity": "ежемесячно",
+      "measureTerms": "Усыновившим (удочерившим) на территории города Москвы после 1 января 2009 г. ребенка-инвалида из числа детей-сирот или детей, оставшихся без попечения родителей",
+      "department": null
     }
   ]
 }
