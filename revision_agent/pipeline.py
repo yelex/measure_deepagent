@@ -339,6 +339,84 @@ def extract_disability_lost_breadwinner_card(seed: dict, mos_text: str, amounts_
     }
 
 
+def extract_disability_nonworking_parents_card(seed: dict, mos_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Компенсация на ребёнка неработающих родителей —
+    инвалидов I или II группы" (`77_2`), два независимых источника:
+
+    - `mos_text` — Госуслуги-лендинг mos.ru
+      (`pgu2/landing/target/7700000000163131356`), тот же JSON-в-`<script>`
+      формат, что и для `77_5` (`extract_disability_lost_breadwinner_card`)
+      — `title`/`recipientCategories[0].comments` явно называют условие
+      "оба или единственный родитель не работают и являются инвалидами I
+      или II группы", `participants[0].organization` даёт department.
+    - `amounts_text` — то же Постановление №3025-ПП (document/1314770295),
+      уже использованное для `77_1`/`77_5`, но здесь релевантен п.1.3.2
+      (не 1.3.1/1.3.3): "на ребенка в возрасте до 18 лет неработающим
+      родителям, являющимся инвалидами I или II группы" → 17790.
+
+    **Важное отличие от `77_1`/`77_5`**: там постановление давало ОДНО
+    число на всю строку без разбивки по группе/причине инвалидности, и
+    оба cause_*/measure_*_group заполнялись одинаково — это было
+    структурно корректно, т.к. текст НЕ вводил разграничение. Здесь эталон
+    (`docs/меры_автоагент_2.xlsx`, `77_2`, сверено напрямую read-only
+    через openpyxl) разграничение ЕСТЬ: cause_disabled_child=None (мера
+    для родителей-инвалидов, а не для ребёнка-инвалида — сам текст п.1.3.2
+    говорит только о родителях), measure_third_group=None,
+    measure_disabled_child=None (текст называет только "I или II группы",
+    третья группа и "инвалид с детства" не упомянуты). Копировать paттерн
+    77_1/77_5 (заполнить все 4 подполя одинаково) здесь было бы ошибкой —
+    заполняются только те подполя, которые текст реально называет.
+    """
+    department = None
+    m = re.search(r'"organization":"([^"]+)"', mos_text)
+    if m:
+        department = m.group(1).strip()
+
+    terms = None
+    m = re.search(r'"comments":"([^"]*)"', mos_text)
+    if m:
+        terms = re.sub(r"\s+", " ", m.group(1)).strip()
+
+    sum_confirmed = (
+        "неработающим родителям" in mos_text or "не работают" in mos_text
+    ) and "инвалидами I или II группы" in amounts_text and "17790" in amounts_text.replace(" ", "").replace("\xa0", "")
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 0,
+        "measureName": seed["measureName"],
+        "measure_first_group": 17790,
+        "measure_second_group": 17790,
+        "measure_third_group": None,
+        "measure_disabled_child": None,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
@@ -349,6 +427,10 @@ def run_disability_seed(seed: dict) -> dict:
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
         return extract_disability_lost_breadwinner_card(seed, mos_text, amounts_text)
+    if seed["npaUrl"] == "https://www.mos.ru/pgu2/landing/target/7700000000163131356/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        return extract_disability_nonworking_parents_card(seed, mos_text, amounts_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."

@@ -25,6 +25,12 @@
       "measureName": "Компенсация детям-инвалидам либо инвалидам с детства до 23 лет, потерявшим кормильца",
       "npaUrl": "https://www.mos.ru/pgu2/landing/target/7700000000163132555/",
       "amountsUrl": "https://docs.cntd.ru/document/1314770295"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Компенсация на ребёнка неработающих родителей — инвалидов I или II группы",
+      "npaUrl": "https://www.mos.ru/pgu2/landing/target/7700000000163131356/",
+      "amountsUrl": "https://docs.cntd.ru/document/1314770295"
     }
   ]
 }
