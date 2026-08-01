@@ -16,16 +16,15 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from revision_agent.export_cards import write_agent_export
-from revision_agent.pipeline import run_svo_seed, run_vbd_seed
+from revision_agent.pipeline import run_disability_seed, run_svo_seed, run_vbd_seed
 
 REGISTRY_PATH = REPO_ROOT / "data" / "measures_registry.json"
 EXPORT_PATH = REPO_ROOT / "data" / "output" / "agent_cards_export.json"
 
-# По одной run_*_seed функции на ЖС — нет ещё справочника для "инвалиды"
-# (см. IMPROVEMENT_BACKLOG.md B003), поэтому её пока нет в этом dict.
 RUNNERS = {
     "вбд": run_vbd_seed,
     "сво": run_svo_seed,
+    "инвалиды": run_disability_seed,
 }
 
 

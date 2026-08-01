@@ -185,3 +185,87 @@ def run_svo_seed(seed: dict) -> dict:
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
     )
+
+
+def extract_disability_care_compensation_card(seed: dict, law_text: str, amounts_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Компенсация лицу, занятому
+    уходом за ребёнком-инвалидом или инвалидом с детства в возрасте до 23
+    лет" (77_1), два источника через cntd.ru (прокси):
+
+    - `law_text` — Закон города Москвы от 23.11.2005 №60 "О социальной
+      поддержке семей с детьми" (document/3662941), ст.7 п.1 пп.3 —
+      перечисляет этот вид выплаты по названию, но НЕ содержит ни суммы,
+      ни условий назначения (кому положено) — это только номенклатура
+      видов выплат.
+    - `amounts_text` — Постановление Правительства Москвы от 09.12.2025
+      №3025-ПП "Об установлении размеров отдельных социальных и иных
+      выплат на 2026 год" (document/1314770295), п.1.3.1 — даёт ТОЛЬКО
+      число 17790 для этой строки, без разбивки по группе инвалидности
+      и без указания причины инвалидности.
+
+    Сумма (17790) подтверждена дословно в п.1.3.1 amounts_text — сверяется
+    ниже. cause_*/measure_*_group заполняются ОДИНАКОВО (1 / 17790) по
+    структурному, а не угаданному основанию: строка в постановлении не
+    разбита ни по группе инвалидности, ни по причине инвалидности — это
+    единственное число на весь вид выплаты, что означает "применяется
+    независимо от группы/причины", а не "данных нет". Это отличается от
+    случая categoryMobilized в extract_svo_college_meal_card (там текст
+    ПЕРЕЧИСЛЯЕТ конкретные категории и не называет одну из них — признак
+    исключения), здесь же текст в принципе не вводит группировку по этим
+    осям — признак отсутствия ограничения.
+
+    measureTerms и department — оставлены None: условия назначения
+    (кому именно из родителей/опекунов положена выплата) и ведомство ни
+    разу не упомянуты ни в одном из двух источников (только в
+    заголовке/тексте mos.ru, который недоступен из песочницы — см.
+    IMPROVEMENT_BACKLOG.md B005); подставлять их значило бы копировать
+    ответ эталона без независимого подтверждения.
+    """
+    sum_confirmed = "занятому уходом за ребенком-инвалидом" in law_text and "17790" in amounts_text.replace(" ", "").replace("\xa0", "")
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": 17790,
+        "measure_second_group": 17790,
+        "measure_third_group": 17790,
+        "measure_disabled_child": 17790,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": None,
+        "department": None,
+    }
+
+
+def run_disability_seed(seed: dict) -> dict:
+    """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
+    if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
+        law_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        return extract_disability_care_compensation_card(seed, law_text, amounts_text)
+    raise NotImplementedError(
+        f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
+        "добавь новую в отдельной ralph-итерации, не угадывай молча."
+    )

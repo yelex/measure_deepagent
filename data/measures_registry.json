@@ -13,5 +13,12 @@
       "npaUrl": "https://docs.cntd.ru/document/1300860766"
     }
   ],
-  "инвалиды": []
+  "инвалиды": [
+    {
+      "region": "Москва",
+      "measureName": "Компенсация лицу, занятому уходом за ребёнком-инвалидом или инвалидом с детства в возрасте до 23 лет",
+      "npaUrl": "https://docs.cntd.ru/document/3662941",
+      "amountsUrl": "https://docs.cntd.ru/document/1314770295"
+    }
+  ]
 }

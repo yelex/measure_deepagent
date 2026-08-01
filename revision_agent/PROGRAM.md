@@ -294,6 +294,36 @@ Ralph loop — см. `RALPH_PROMPT.md`, п.0). Пополняется по фа�
   (пересборка `libexpat`/`python@3.12` на хосте или ревизия образа
   песочницы). Полный разбор: `data/output/ralph_iteration_20260801_171211.md`
 
+### [2026-08-01 17:24] iteration_20260801_172448 — B003 (continued), первый seed инвалиды, commit
+
+- Гипотеза: оба блокера, останавливавшие предыдущие попытки B003
+  (сетевые permission'ы — снято 409f6ef; pyexpat/openpyxl — снято
+  8f61a00/B006), в этой сессии подтверждённо сняты — впервые есть
+  реальный шанс добавить первый seed для ЖС "инвалиды" (0 карточек,
+  22/50 мер эталона)
+- Изменение: `revision_agent/pipeline.py::run_disability_seed` +
+  `extract_disability_care_compensation_card` (мера "Компенсация лицу,
+  занятому уходом за ребёнком-инвалидом или инвалидом с детства в
+  возрасте до 23 лет", `77_1`, два источника cntd.ru через прокси —
+  document/3662941 базовый закон и document/1314770295 постановление о
+  размерах на 2026 год); `data/measures_registry.json` (seed на 1 меру,
+  расширен формат seed'а с `amountsUrl`); `scripts/run_pipeline_demo.py`
+  (диспатч дополнен инвалиды→run_disability_seed)
+- Метрики до: Average QS=0.292, Perfect Rate=0.000, Recall=0.040 (2/50),
+  Precision=1.000
+- Метрики после: Average QS=0.394, Perfect Rate=0.000, Recall=0.060
+  (3/50), Precision=1.000
+- Вердикт: kept — Recall и Average QS выросли, Precision/Perfect Rate не
+  просели. Карточка инвалиды: QS=0.600 (name/category/sum совпали,
+  terms/department честно `None`)
+- Примечание: методологическое решение — `cause_*`/`measure_*_group`
+  заполнены одинаково (1/17790) на основании структурного факта
+  источника (постановление даёт одно число без разбивки по группе/
+  причине для этой строки), а не подгонки под эталон; отличие от
+  прецедента `categoryMobilized=0` объяснено в docstring и в
+  `data/output/ralph_iteration_20260801_172448.md`. B003 остаётся
+  `in_progress` — 1/22 меры инвалиды, ещё 21 впереди
+
 <!-- Дальнейшие записи добавляются сюда по мере прогонов. -->
 
 ## Baseline метрик
