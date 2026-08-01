@@ -31,6 +31,12 @@
       "measureName": "Компенсация на ребёнка неработающих родителей — инвалидов I или II группы",
       "npaUrl": "https://www.mos.ru/pgu2/landing/target/7700000000163131356/",
       "amountsUrl": "https://docs.cntd.ru/document/1314770295"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Компенсация в связи с ростом стоимости жизни отдельным категориям семей с детьми",
+      "npaUrl": "https://docs.cntd.ru/document/3662941",
+      "amountsUrl": "https://docs.cntd.ru/document/1314770295"
     }
   ]
 }

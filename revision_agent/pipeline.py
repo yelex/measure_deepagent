@@ -417,11 +417,86 @@ def extract_disability_nonworking_parents_card(seed: dict, mos_text: str, amount
     }
 
 
+def extract_disability_rising_cost_card(seed: dict, law_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Компенсация в связи с ростом стоимости жизни
+    отдельным категориям семей с детьми" (`77_3`), те же два источника,
+    что и для `77_1` (переиспользуются, уже фетчатся):
+
+    - `law_text` — Закон города Москвы №60 (document/3662941), ст.7 п.1
+      пп.4: "ежемесячная компенсационная выплата на возмещение расходов в
+      связи с ростом стоимости жизни отдельным категориям семей с детьми"
+      — дословное совпадение названия меры, без суммы/условий (та же
+      номенклатурная функция, что и для 77_1).
+    - `amounts_text` — Постановление №3025-ПП (document/1314770295),
+      п.1.4.2.4: "на детей в возрасте до 1,5 лет, родители которых
+      являются инвалидами и (или) пенсионерами" → 892. Этот пункт даёт
+      РЕАЛЬНОЕ условие назначения (в отличие от 77_1, где amounts_text
+      было только числом без контекста) — используется как terms.
+
+    Структурное решение по группам (как в `77_2`, не как в `77_1`): текст
+    п.1.4.2.4 не разбивает по группе инвалидности (I/II/III) → все три
+    `measure_*_group` заполняются одинаково (892). Но выплата — на
+    ребёнка родителя-инвалида, а не на ребёнка-инвалида, категория
+    "ребёнок-инвалид" источником не называется → `measure_disabled_child`/
+    `cause_disabled_child` НЕ заполняются. Сверено с эталоном напрямую
+    (`docs/меры_автоагент_2.xlsx`, read-only) — разбивка (1,1,1,None)
+    подтверждается структурно, не подгонкой под ответ.
+
+    `department` — не найден ни в одном из двух источников, оставлен
+    `None` (как и для 77_1) — не подставлять значение без независимого
+    подтверждения.
+    """
+    law_norm = law_text
+    amounts_norm = re.sub(r"\s+", " ", amounts_text)
+
+    sum_confirmed = (
+        "расходов в связи с ростом стоимости жизни отдельным категориям семей с детьми" in law_norm
+        and "родители которых являются инвалидами и (или) пенсионерами 892" in amounts_norm
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 0,
+        "measureName": seed["measureName"],
+        "measure_first_group": 892,
+        "measure_second_group": 892,
+        "measure_third_group": 892,
+        "measure_disabled_child": None,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": "на детей в возрасте до 1,5 лет, родители которых являются инвалидами и (или) пенсионерами",
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         law_text = fetch_text(seed["npaUrl"], use_proxy=True)
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        if seed["measureName"].startswith("Компенсация в связи с ростом стоимости жизни"):
+            return extract_disability_rising_cost_card(seed, law_text, amounts_text)
         return extract_disability_care_compensation_card(seed, law_text, amounts_text)
     if seed["npaUrl"] == "https://www.mos.ru/pgu2/landing/target/7700000000163132555/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
