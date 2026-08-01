@@ -66,6 +66,11 @@
       "region": "Москва",
       "measureName": "Предоставление бесплатного питания",
       "npaUrl": "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Бесплатный проезд в наземном транспорте, метрополитене, МЦК, МЦД, а также на железнодорожном транспорте в пределах Москвы и области",
+      "npaUrl": "https://www.mos.ru/karta-moskvicha/tipy-derzhataley/invalidy/"
     }
   ]
 }

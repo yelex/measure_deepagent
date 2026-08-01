@@ -849,6 +849,94 @@ def extract_disability_foster_reward_card(seed: dict, mos_text: str, amounts_tex
     }
 
 
+def extract_disability_social_card_transport_card(seed: dict, mos_text: str) -> dict:
+    """Эвристика для меры "Бесплатный проезд в наземном транспорте,
+    метрополитене, МЦК, МЦД, а также на железнодорожном транспорте в
+    пределах Москвы и области" (`77_10`), ОДИН источник (как в 77_9):
+
+    Эталонная `Ссылка на источник` — тот же общий хаб-FAQ
+    `kak-poluchit-pomosch-dlya-invalidov`, уже проверенный и отброшенный в
+    итерации 77_9 (0 совпадений по теме, ссылки-переходы не сохраняются в
+    `fetch_text`). Эталонный "Нормативно-правовой акт - NPA" —
+    `docs.cntd.ru/document/3662941?marker=7DE0K6` (тот же закон N60 "О
+    социальной поддержке семей с детьми", уже фетчащийся для 77_1/3/4/6) —
+    проверен полнотекстовым поиском, "проезд" не встречается ни разу; этот
+    закон не годится текстовым источником для ЭТОЙ строки (хотя эталон на
+    него ссылается) и не используется здесь.
+
+    Реальный источник найден через SearXNG:
+    `mos.ru/karta-moskvicha/tipy-derzhataley/invalidy/` — выделенная
+    страница "Карта москвича для инвалидов 1, 2 и 3 группы". Даёт дословно
+    категорию получателей ("Граждане с инвалидностью, зарегистрированные в
+    Москве, могут получить карту москвича") и перечисляет саму льготу
+    ("Бесплатный проезд на общественном транспорте": городской транспорт
+    Москвы — электробусы/автобусы/трамваи/метро/МЦК, общественный
+    транспорт Московской области, пригородный ж/д — электрички/МЦД,
+    аэроэкспресс) — совпадает по существу с эталонным `measureName`
+    (наземный транспорт = автобусы/трамваи, метрополитен = метро, МЦК/МЦД
+    названы явно, железнодорожный = электрички/аэроэкспресс, Москва и
+    область — оба явно перечислены).
+
+    Страница адресует все три категории (инвалиды 1/2/3 группы, ребёнок-
+    инвалид, родитель/законный представитель ребёнка-инвалида) в одном
+    списке разделов оформления, без разбивки условий/суммы по группе →
+    как и в 77_9, `measure_first/second/third_group`/`measure_disabled_child`
+    заполнены ОДИНАКОВО текстом "оформление социальной карты" (сама льгота
+    — не денежная сумма, а результат оформления карты, что явно следует из
+    структуры страницы "Оформить карту → Доступные льготы").
+    `measurePeriodicity` НЕ подтверждён дословно (страница описывает
+    процесс оформления, но нигде не пишет "единовременно" как термин) →
+    `None`, не копируется из эталона. `department` (эталон: ГУП
+    "Московский социальный регистр") тоже НЕ подтверждён — страница не
+    называет оператора карты рядом со льготой → `None`, как в 77_7/77_8/77_9.
+    """
+    terms = None
+    m = re.search(r"Кто может получить карту москвича\s+(.*?)\s+Доступные льготы", mos_text)
+    if m:
+        terms = m.group(1).strip()
+
+    confirmed = (
+        "Граждане с инвалидностью" in mos_text
+        and "могут получить карту москвича" in mos_text
+        and "Бесплатный проезд на общественном транспорте" in mos_text
+    )
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": "оформление социальной карты",
+        "measure_second_group": "оформление социальной карты",
+        "measure_third_group": "оформление социальной карты",
+        "measure_disabled_child": "оформление социальной карты",
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def extract_disability_free_food_card(seed: dict, mos_text: str) -> dict:
     """Эвристика для меры "Предоставление бесплатного питания" (`77_9`),
     ОДИН источник (не два, в отличие от 77_1..77_8):
@@ -931,6 +1019,9 @@ def run_disability_seed(seed: dict) -> dict:
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         return extract_disability_free_food_card(seed, mos_text)
+    if seed["npaUrl"] == "https://www.mos.ru/karta-moskvicha/tipy-derzhataley/invalidy/":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_disability_social_card_transport_card(seed, mos_text)
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         law_text = fetch_text(seed["npaUrl"], use_proxy=True)
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
