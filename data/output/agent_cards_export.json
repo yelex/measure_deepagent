@@ -138,6 +138,22 @@
       "measurePeriodicity": "ежемесячно",
       "measureTerms": "На детей-сирот и детей, оставшихся без попечения родителей, опекунам (попечителям) и приемным родителям, имеющим место жительства в Москве, ежемесячно выплачиваются денежные средства на питание, одежду, обувь, предметы личной гигиены, игрушки, книги и так далее.",
       "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "cause_general_disease": 0,
+      "cause_war_trauma": 0,
+      "cause_radiation": 0,
+      "cause_disabled_child": 1,
+      "measureName": "Вознаграждение приёмному родителю, патронатному воспитателю",
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": 39856,
+      "measurePeriodicity": "ежемесячно",
+      "measureTerms": "Ежемесячное вознаграждение приемным родителям назначается в том случае, если и приемные родители и ребенок имеют место жительства в Москве .",
+      "department": null
     }
   ]
 }

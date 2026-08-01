@@ -764,6 +764,91 @@ def extract_disability_guardian_content_card(seed: dict, mos_text: str, amounts_
     }
 
 
+def extract_disability_foster_reward_card(seed: dict, mos_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Вознаграждение приёмному родителю, патронатному
+    воспитателю" (`77_7`), два независимых источника:
+
+    - `mos_text` — та же mos.ru FAQ-страница, что и для 77_8
+      (`otvet-socialnaya-podderjka/kak-poluchit-vyplaty-usynovitelyam-opekunam-priemnym-roditelyam`,
+      найдена через SearXNG в прошлой итерации). Эталон (`docs/меры_автоагент_2.xlsx`)
+      указывает для 77_7 другую ссылку-источник
+      (`kak-poluchit-pomosch-dlya-invalidov`) — не проверялась, т.к. методика
+      требует подтверждения полей цитатой из ДОВЕРЕННОГО источника, не
+      совпадения самого URL с колонкой эталона; вопрос №7 этой страницы
+      ("Как оформить ежемесячное вознаграждение приемным родителям?",
+      `"id":1450`) отвечает на тот же вопрос по существу. Ответ `"id":1657`
+      даёт условие почти дословно как в эталонном `measureTerms`: и
+      приёмные родители, и ребёнок должны иметь место жительства в Москве.
+    - `amounts_text` — то же Постановление №3025-ПП (document/1314770295),
+      уже используемое для 77_1/2/3/4/5/6/8, раздел §2.5 "Ежемесячное
+      вознаграждение приемному родителю (приемным родителям), патронатному
+      воспитателю:". Подпункт §2.5.2 "на каждого ребенка-инвалида,
+      переданного на воспитание в приемную семью, на патронатное
+      воспитание" → 39856 (в отличие от §2.5.1, не-инвалид, 23446) —
+      матчинг ищет блок "2.5 ... до 2.6", чтобы не перепутать со следующим
+      разделом.
+
+    Группа инвалидности источником не называется (речь о статусе
+    "ребёнок-инвалид" в целом, как в 77_2/77_3/77_4/77_6/77_8) →
+    `measure_*_group` остаются `None`, заполнены только
+    `measure_disabled_child`/`cause_disabled_child`. `department` — как и
+    в 77_8, конкретный блок ответа №7 не называет ведомство рядом с
+    суммой/условием (общие упоминания "Департамента труда и социальной
+    защиты" на странице относятся к процедуре подачи документов, не к
+    этой конкретной выплате) → оставлен `None`, не угадывается.
+    """
+    block_match = re.search(
+        r"2\.5 Ежемесячное вознаграждение.*?2\.6 ", re.sub(r"\s+", " ", amounts_text), re.DOTALL
+    )
+    block_2_5 = block_match.group(0) if block_match else ""
+
+    terms = None
+    m = re.search(r'"id":1657,"text":"<p>(.*?)</p>', mos_text, re.DOTALL)
+    if m:
+        terms = re.sub(r"<[^>]+>", " ", m.group(1))
+        terms = re.sub(r"\s+", " ", terms).strip()
+
+    sum_confirmed = (
+        "вознаграждение приемным родителям" in mos_text
+        and "на каждого ребенка-инвалида, переданного на воспитание в приемную семью, на патронатное воспитание 39856" in block_2_5
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 0,
+        "cause_war_trauma": 0,
+        "cause_radiation": 0,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": None,
+        "measure_second_group": None,
+        "measure_third_group": None,
+        "measure_disabled_child": 39856,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
@@ -787,6 +872,8 @@ def run_disability_seed(seed: dict) -> dict:
     if seed["npaUrl"] == "https://www.mos.ru/otvet-socialnaya-podderjka/kak-poluchit-vyplaty-usynovitelyam-opekunam-priemnym-roditelyam/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        if seed["measureName"].startswith("Вознаграждение приёмному родителю"):
+            return extract_disability_foster_reward_card(seed, mos_text, amounts_text)
         return extract_disability_guardian_content_card(seed, mos_text, amounts_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
