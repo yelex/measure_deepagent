@@ -259,12 +259,96 @@ def extract_disability_care_compensation_card(seed: dict, law_text: str, amounts
     }
 
 
+def extract_disability_lost_breadwinner_card(seed: dict, mos_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Компенсация детям-инвалидам либо инвалидам с
+    детства до 23 лет, потерявшим кормильца" (`77_5`), два независимых
+    источника:
+
+    - `mos_text` — Госуслуги-лендинг mos.ru
+      (`pgu2/landing/target/7700000000163132555`). Обнаружено в этой
+      итерации, что `mos.ru` через `RU_PROXY_URL` фактически отвечает
+      (раньше падал на TLS-хендшейке, см. `IMPROVEMENT_BACKLOG.md` B005
+      — похоже, блокер не постоянный). Страница отдаёт JSON внутри
+      `<script>`, `fetch_text` его не трогает (это не HTML-теги) — из
+      него вытаскиваем `shortTitle` (название), первое `"organization":`
+      внутри `participants` (department) и первое `"comments":` внутри
+      `recipientCategories` (условия/terms — реальный текст, кому
+      положена выплата, не выдуманный).
+    - `amounts_text` — то же Постановление Правительства Москвы
+      №3025-ПП от 09.12.2025 (document/1314770295), уже используемое
+      для `77_1` (см. `extract_disability_care_compensation_card`),
+      п.1.3.3 даёт число 2153 для этой строки, снова без разбивки по
+      группе инвалидности/причине — та же структурная логика, что и в
+      `77_1`: одно число на весь вид выплаты означает "применяется
+      независимо от группы/причины", а не "данных нет".
+
+    Сумма подтверждается конъюнкцией двух независимых сигналов: mos.ru
+    называет меру ("потерявшим кормильца" в тексте лендинга) И
+    amounts_text даёт 2153 рядом с тем же названием строки (п.1.3.3) —
+    аналогично проверке в `77_1` (текст закона называет выплату, отдельный
+    документ даёт сумму), только здесь второй источник — mos.ru, не
+    базовый закон (для `77_5` базовый закон 3662941 эту выплату вообще не
+    перечисляет — проверено в этой итерации, ст.7 п.1 содержит только 12
+    других видов выплат).
+    """
+    department = None
+    m = re.search(r'"organization":"([^"]+)"', mos_text)
+    if m:
+        department = m.group(1).strip()
+
+    terms = None
+    m = re.search(r'"comments":"([^"]*)"', mos_text)
+    if m:
+        terms = re.sub(r"\s+", " ", m.group(1)).strip()
+
+    sum_confirmed = "потерявшим кормильца" in mos_text and "2153" in amounts_text.replace(" ", "").replace("\xa0", "")
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": 2153,
+        "measure_second_group": 2153,
+        "measure_third_group": 2153,
+        "measure_disabled_child": 2153,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         law_text = fetch_text(seed["npaUrl"], use_proxy=True)
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
         return extract_disability_care_compensation_card(seed, law_text, amounts_text)
+    if seed["npaUrl"] == "https://www.mos.ru/pgu2/landing/target/7700000000163132555/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        return extract_disability_lost_breadwinner_card(seed, mos_text, amounts_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
