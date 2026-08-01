@@ -61,6 +61,11 @@
       "measureName": "Вознаграждение приёмному родителю, патронатному воспитателю",
       "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-poluchit-vyplaty-usynovitelyam-opekunam-priemnym-roditelyam/",
       "amountsUrl": "https://docs.cntd.ru/document/1314770295"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Предоставление бесплатного питания",
+      "npaUrl": "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/"
     }
   ]
 }

@@ -154,6 +154,22 @@
       "measurePeriodicity": "ежемесячно",
       "measureTerms": "Ежемесячное вознаграждение приемным родителям назначается в том случае, если и приемные родители и ребенок имеют место жительства в Москве .",
       "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "cause_general_disease": 0,
+      "cause_war_trauma": 0,
+      "cause_radiation": 0,
+      "cause_disabled_child": 1,
+      "measureName": "Предоставление бесплатного питания",
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": "бесплатные продукты питания",
+      "measurePeriodicity": "ежемесячно",
+      "measureTerms": "Бесплатные продукты питания на молочной кухне предусмотрены для постоянно зарегистрированных в Москве: беременных женщин; кормящих женщин — на ребенка в возрасте до 6 месяцев; детей до 3 лет; детей до 7 лет из многодетных семей; детей от 3 до 15 лет, имеющих хронические заболевания ; детей-инвалидов от 3 до 18 лет.",
+      "department": null
     }
   ]
 }

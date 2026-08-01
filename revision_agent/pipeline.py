@@ -849,8 +849,88 @@ def extract_disability_foster_reward_card(seed: dict, mos_text: str, amounts_tex
     }
 
 
+def extract_disability_free_food_card(seed: dict, mos_text: str) -> dict:
+    """Эвристика для меры "Предоставление бесплатного питания" (`77_9`),
+    ОДИН источник (не два, в отличие от 77_1..77_8):
+    `Нормативно-правовой акт - NPA`/`Ссылка на НПА` у этой строки эталона
+    оба `None` — второй независимый источник (НПА) структурно недоступен
+    для этой меры, второй источник взять неоткуда.
+
+    `Ссылка на источник` в эталоне указывает на общий хаб-FAQ
+    `otvet-socialnaya-podderjka/kak-poluchit-pomosch-dlya-invalidov/` — но
+    полнотекстовый поиск "питани" на этой странице дал 0 совпадений: это
+    общий обзор с гиперссылками на другие otvet-страницы, а не сам ответ
+    (ссылки не сохраняются в `fetch_text`, которая убирает все теги).
+    Реальный текст найден через SearXNG на другой mos.ru FAQ-странице —
+    `otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/`
+    ("Как получить продукты на молочной кухне") — вопрос №1 ("Кто может
+    получить питание на молочной кухне?", `"id":249`) перечисляет
+    категории получателей бесплатных продуктов, последняя в списке —
+    "детей-инвалидов от 3 до 18 лет" (совпадает с `measure_disabled_child`).
+    Остальные категории (беременные, кормящие, дети до 3/7/15 лет без
+    инвалидности) не про инвалидность → `measure_first/second/third_group`
+    остаются `None`, как в 77_2/3/4/6/7/8.
+
+    `measurePeriodicity` подтверждён дословно: страница описывает, что
+    получатель должен формировать QR-код на продукты "ежемесячно".
+    `department` этим источником НЕ подтверждён (страница не называет
+    Департамент здравоохранения рядом с этой льготой) → оставлен `None`,
+    как в 77_7/77_8 — не копируется из эталона.
+    """
+    terms = None
+    m = re.search(r'"id":256,"text":"(.*?)"\}\]\},\{"id":1597', mos_text, re.DOTALL)
+    if m:
+        raw = re.sub(r'data-hint-content=\\".*?\\"', "", m.group(1))
+        terms = re.sub(r"<[^>]+>", " ", raw)
+        terms = re.sub(r"\s+", " ", terms).strip()
+
+    confirmed = (
+        "молочной кухне" in mos_text
+        and "детей-инвалидов от 3 до 18 лет" in mos_text
+        and "ежемесячно" in mos_text
+    )
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 0,
+        "cause_war_trauma": 0,
+        "cause_radiation": 0,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": None,
+        "measure_second_group": None,
+        "measure_third_group": None,
+        "measure_disabled_child": "бесплатные продукты питания",
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
+    if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_disability_free_food_card(seed, mos_text)
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3662941" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         law_text = fetch_text(seed["npaUrl"], use_proxy=True)
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
