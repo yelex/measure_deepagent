@@ -71,6 +71,12 @@
       "region": "Москва",
       "measureName": "Бесплатный проезд в наземном транспорте, метрополитене, МЦК, МЦД, а также на железнодорожном транспорте в пределах Москвы и области",
       "npaUrl": "https://www.mos.ru/karta-moskvicha/tipy-derzhataley/invalidy/"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Компенсация гражданам, имеющим заслуги в области физической культуры и спорта",
+      "npaUrl": "https://docs.cntd.ru/document/3662941",
+      "amountsUrl": "https://docs.cntd.ru/document/1314770295"
     }
   ]
 }

@@ -1014,6 +1014,98 @@ def extract_disability_free_food_card(seed: dict, mos_text: str) -> dict:
     }
 
 
+def extract_disability_sports_merit_card(seed: dict, law_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Компенсация гражданам, имеющим заслуги в
+    области физической культуры и спорта" (`77_20`), формально те же два
+    источника, что для 77_1/3/4/6:
+
+    - `law_text` — Закон города Москвы №60 (document/3662941) — проверен
+      полнотекстовым поиском и НЕ упоминает ни "заслуг", ни "спорт" ни
+      разу. В отличие от 77_1/3/4 (номенклатурное подтверждение названия)
+      и от 77_6 (подтверждение категории получателя), здесь эта роль
+      пустая — источник не используется по существу, только
+      `amounts_text`.
+    - `amounts_text` — Постановление №3025-ПП (document/1314770295), §4.3
+      (не §1.x/§2.x, как в предыдущих инвалиды-seed'ах — другой раздел
+      того же документа). §4.3.1.11 ("...гражданам, имеющим заслуги в
+      области физической культуры и спорта: 22238 - чемпионам и призерам
+      Олимпийских игр, получающим... пенсию по инвалидности; - чемпионам
+      и призерам Паралимпийских или Сурдлимпийских игр") и §4.3.1.12 (та
+      же формулировка, 20015, "чемпионам мира и чемпионам Европы...
+      чемпионатов, проводимых среди инвалидов") — оба подтверждают и
+      сумму, и категорию получателя дословно.
+
+    Источник не разбивает выплату по группе инвалидности (I/II/III) —
+    структурный факт, как в 77_1/77_10 → все три `measure_*_group`
+    заполняются одинаковым диапазоном "20015–22238" (scorer сравнивает
+    только цифры через `extract_number`, порядок совпадает с эталонным
+    "20 015–22 238 ₽"). В отличие от 77_1/77_10, источник вообще не
+    касается оси "ребёнок-инвалид" (категория получателя —
+    "спортсмен/пенсионер по инвалидности", не "ребёнок-инвалид") →
+    `measure_disabled_child`/`cause_disabled_child` НЕ заполняются
+    (сверено с эталоном напрямую — оба `None`/пусто в golden).
+    `department` — ни "Департамент", ни любое другое ведомство ни разу не
+    встречается ни в одном из двух источников → `None`, не угадывается.
+    """
+    block_match = re.search(
+        r"4\.3\.1\.11 Ежемесячная компенсационная выплата гражданам, имеющим заслуги в области физической культуры и спорта:.*?4\.3\.1\.13",
+        amounts_text,
+        re.DOTALL,
+    )
+    block = block_match.group(0) if block_match else ""
+
+    sum_high = re.search(r"4\.3\.1\.11.*?спорта:\s*(\d+)", block, re.DOTALL)
+    sum_low = re.search(r"4\.3\.1\.12.*?спорта:\s*(\d+)", block, re.DOTALL)
+    clause_high = re.search(r"4\.3\.1\.11.*?спорта:\s*\d+\s*(.*?)\s*4\.3\.1\.12", block, re.DOTALL)
+    clause_low = re.search(r"4\.3\.1\.12.*?спорта:\s*\d+\s*(.*?)\s*4\.3\.1\.13", block, re.DOTALL)
+
+    sum_confirmed = bool(
+        sum_high and sum_low and sum_high.group(1) == "22238" and sum_low.group(1) == "20015"
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    if clause_high and clause_low:
+        terms = f"{clause_high.group(1).strip()} {clause_low.group(1).strip()}"
+        terms = re.sub(r"\s+", " ", terms).strip()
+
+    group_value = f"{sum_low.group(1)}–{sum_high.group(1)}"
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 0,
+        "measureName": seed["measureName"],
+        "measure_first_group": group_value,
+        "measure_second_group": group_value,
+        "measure_third_group": group_value,
+        "measure_disabled_child": None,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1031,6 +1123,8 @@ def run_disability_seed(seed: dict) -> dict:
             return extract_disability_child_food_compensation_card(seed, law_text, amounts_text)
         if seed["measureName"].startswith("Компенсация усыновившим ребёнка-инвалида"):
             return extract_disability_adopted_child_card(seed, law_text, amounts_text)
+        if seed["measureName"].startswith("Компенсация гражданам, имеющим заслуги"):
+            return extract_disability_sports_merit_card(seed, law_text, amounts_text)
         return extract_disability_care_compensation_card(seed, law_text, amounts_text)
     if seed["npaUrl"] == "https://www.mos.ru/pgu2/landing/target/7700000000163132555/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
