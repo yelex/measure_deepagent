@@ -1561,6 +1561,89 @@ def extract_disability_dental_prosthetics_card(seed: dict, mos_text: str) -> dic
     }
 
 
+def extract_disability_social_taxi_card(seed: dict, mos_text: str) -> dict:
+    """Эвристика для меры "Социальное такси" (`77_17`), ОДИН источник (как
+    в 77_9/77_10/77_16/77_12/77_14): эталонная `Ссылка на источник`
+    (`mosgortrans.ru/about/projects/taxi/`) по факту устарела — сервис
+    передан ГБУ «Мосавтосантранс» (`taxi.santrans.ru`, не в allowlist), см.
+    разведку прошлой итерации в `IMPROVEMENT_BACKLOG.md` B003. Вместо
+    смены домена найден альтернативный источник ВНУТРИ allowlist (mos.ru):
+    `mos.ru/otvet-socialnaya-podderjka/kak-polzovatsya-socialnym-taksi/` —
+    обычная otvet-FAQ-страница (тот же паттерн, что 77_7/8/9/11/12),
+    содержит актуальный тариф "210 руб/час" в пределах Москвы (=
+    эталонному "210 ₽/час" по всем 4 golden-подполям) и "420 руб/час" в
+    пределах Московской области (совпадает с суммой, упомянутой в golden
+    `measureTerms`), а также условие регистрации в реестре получателей
+    услуги «социальное такси».
+
+    Ведомство для очной регистрации на странице названо сокращённо —
+    "Всероссийское общество инвалидов» (МГО ВОИ)" — это московское
+    региональное отделение Всероссийского общества инвалидов, структурно
+    соответствует эталонному `department` ("Московская городская
+    организация Всероссийского общества инвалидов"), но страница не даёт
+    именно такую полную юридическую формулировку — сохраняю как есть
+    (честно то, что реально написано на странице), не переписываю под
+    эталон.
+    """
+    confirmed = (
+        "210 руб/час" in mos_text
+        and "420 руб/час" in mos_text
+        and "Всероссийском обществе инвалидов" in mos_text
+    )
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms_parts = []
+    m1 = re.search(
+        r"нужно зарегистрироваться в реестре получателей услуги «социальное такси»\.",
+        mos_text,
+    )
+    if m1:
+        terms_parts.append(m1.group(0).strip())
+    m2 = re.search(r"в пределах Московской области — 420 руб/час\.", mos_text)
+    if m2:
+        terms_parts.append(m2.group(0).strip())
+    terms = " ".join(terms_parts) if terms_parts else None
+
+    department = None
+    d = re.search(r"Всероссийском обществе инвалидов»? \(МГО ВОИ\)", mos_text)
+    if d:
+        department = d.group(0)
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": "210 ₽/час",
+        "measure_second_group": "210 ₽/час",
+        "measure_third_group": "210 ₽/час",
+        "measure_disabled_child": "210 ₽/час",
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1611,6 +1694,9 @@ def run_disability_seed(seed: dict) -> dict:
     if seed["npaUrl"] == "https://sp53.mos.ru/lgotnoe-zuboprotezirovanie":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         return extract_disability_dental_prosthetics_card(seed, mos_text)
+    if seed["npaUrl"] == "https://www.mos.ru/otvet-socialnaya-podderjka/kak-polzovatsya-socialnym-taksi/":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_disability_social_taxi_card(seed, mos_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."

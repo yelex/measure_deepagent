@@ -103,6 +103,11 @@
       "region": "Москва",
       "measureName": "Бесплатное изготовление и ремонт зубных протезов",
       "npaUrl": "https://sp53.mos.ru/lgotnoe-zuboprotezirovanie"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Социальное такси",
+      "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-polzovatsya-socialnym-taksi/"
     }
   ]
 }
