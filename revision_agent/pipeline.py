@@ -221,12 +221,58 @@ def extract_svo_school_meal_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_svo_kindergarten_enrollment_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Зачисление ребёнка в детский
+    сад" (77_svo_6), тот же источник cntd.ru/document/1300860766, что и
+    77_svo_9/77_svo_10 — п.1.1 указа (а не п.1.4/п.1.5).
+
+    measureTerms — реально найден в тексте (п.1.1, дословно про
+    внеочередное направление детей от 1,5 лет в дошкольные образовательные
+    организации). Формулировка не идентична golden ("Направление...в
+    образовательные организации, предоставляющие дошкольное образование"
+    против golden "зачисляются в детские сады") — тот же факт, юридическая
+    формулировка НПА, а не сайта-агрегатора; извлечён как есть, не
+    подогнан под текст эталона. categoryContractor/categoryVolunteer/
+    kidsOfMilitary/categoryMobilized — та же логика и то же системное
+    ограничение, что в 77_svo_9/77_svo_10 (единая преамбула ст.1 указа на
+    всю статью, "мобилизован" в документе не встречается ни разу).
+    department снова `None` — "Единый центр поддержки участников СВО и их
+    семей" (golden) в тексте указа не встречается.
+    """
+    terms = None
+    m = re.search(
+        r"(Направление во внеочередном порядке детей[^.]+\.)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
+    has_volunteer = "доброволь" in page_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 1,
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
         page_text = fetch_text(seed["npaUrl"], use_proxy=True)
         if seed["measureName"].startswith("Бесплатное питание в школах"):
             return extract_svo_school_meal_card(seed, page_text)
+        if seed["measureName"].startswith("Зачисление ребёнка в детский сад"):
+            return extract_svo_kindergarten_enrollment_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
