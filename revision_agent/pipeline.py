@@ -584,6 +584,52 @@ def extract_svo_psychological_help_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_svo_legal_aid_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Бесплатная юридическая
+    помощь" (77_svo_21), тот же источник cntd.ru/document/1300860766, что и
+    77_svo_6/7/8/9/10/11/12/14/17/19 — п.1.14 указа (по таблице
+    сопоставления, сверенной целиком в iteration_20260802_121632 и
+    подтверждённой без расхождений в четырёх последующих итерациях; п.1.14
+    перепроверен прямым повторным фетчем документа в этой итерации —
+    "1.14. Консультирование семьи по юридическим вопросам." — семантически
+    соответствует golden `measureName`/`measureTerms`, но не дословно, та
+    же ситуация юридическая-формулировка-НПА-vs-разговорный-эталон, что и
+    в 77_svo_6/7/8).
+
+    `kidsOfMilitary` — ОТЛИЧИЕ от предыдущих 10 сво-карточек: golden для
+    этой строки = 0 (не 1). Сверено с эталоном напрямую. Прежние
+    extractor'ы хардкодили 1 корректно для своих конкретных пунктов
+    (буквально про детей/семью с детьми), но п.1.14 не называет детей
+    специфически — здесь честно 0, не скопировано по прецеденту вслепую.
+    categoryContractor/categoryVolunteer/department — та же логика и то же
+    системное ограничение источника, что во всех предыдущих сво-seed'ах.
+    """
+    terms = None
+    m = re.search(
+        r"(Консультирование семьи по юридическим вопросам[^.]*\.)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
+    has_volunteer = "доброволь" in page_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 0,
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -606,6 +652,8 @@ def run_svo_seed(seed: dict) -> dict:
             return extract_svo_professional_training_card(seed, page_text)
         if seed["measureName"].startswith("Оказание психологической помощи"):
             return extract_svo_psychological_help_card(seed, page_text)
+        if seed["measureName"].startswith("Бесплатная юридическая помощь"):
+            return extract_svo_legal_aid_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "

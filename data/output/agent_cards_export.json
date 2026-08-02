@@ -141,6 +141,19 @@
       "measurePeriodicity": null,
       "measureTerms": "Оказание психологической помощи семье.",
       "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "categoryMobilized": 0,
+      "categoryContractor": 1,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 0,
+      "measureName": "Бесплатная юридическая помощь",
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": "Консультирование семьи по юридическим вопросам.",
+      "department": null
     }
   ],
   "инвалиды": [
