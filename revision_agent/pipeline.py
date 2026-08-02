@@ -1728,6 +1728,112 @@ def extract_disability_home_social_service_card(seed: dict, mos_text: str) -> di
     }
 
 
+def extract_disability_pensioner_compensation_card(seed: dict, mos_text: str, amounts_text: str) -> dict:
+    """Эвристика для меры "Компенсация отдельным категориям работающих
+    пенсионеров" (`77_13`), ДВА источника, оба НЕ из эталонной колонки
+    "Ссылка на источник"/"Нормативно-правовой акт - NPA" (общий хаб
+    `kak-poluchit-pomosch-dlya-invalidov` и Закон №70/document/3656309 —
+    оба уже проверены и отброшены для соседних 77_9/77_10/77_14/77_19,
+    рамочные/обзорные, без содержательного текста этой меры):
+
+    - `amounts_text` — то же постановление №3025-ПП (document/1314770295),
+      уже фетчащееся для нескольких предыдущих seed'ов, но здесь
+      используется НЕ §-таблица приложения, а п.3 ПРЕАМБУЛЫ самого
+      постановления: "...ежемесячной компенсационной выплаты к пенсии
+      некоторых категорий работающих пенсионеров... в размере 27401
+      рубля" — дословно подтверждает и название меры, и сумму.
+    - `mos_text` — mos.ru FAQ-страница
+      `otvet-socialnaya-podderjka/kak-oformit-doplatu-k-pensii-rabotayuschemu-pensioneru/`
+      (найдена через WebSearch, не из эталонной колонки — сам эталон
+      ссылается только на общий хаб и рамочный закон, оба непригодны) —
+      даёт условие ПОЧТИ ДОСЛОВНО golden `terms` (регистрация в Москве
+      не менее 10 лет + доплата до городского социального стандарта
+      27 401 ₽) и категории получателей независимо от занимаемой
+      должности: "инвалидам I и II группы" (cause_general_disease),
+      "инвалидам Великой Отечественной войны... и участникам Великой
+      Отечественной войны" (cause_war_trauma), "инвалидам вследствие
+      катастрофы на Чернобыльской АЭС... аварии в 1957 году на
+      производственном объединении «Маяк»..." (cause_radiation) — все
+      три golden cause_*=1 подтверждены дословно на этой странице.
+
+    Golden `measure_first_group`/`measure_second_group`="индивидуально"
+    (не число) — источник тоже НЕ даёт единой суммы, а описывает доплату
+    как "увеличивает размер пенсии до уровня городского социального
+    стандарта" (сумма варьируется по фактической пенсии получателя) —
+    буквальное "индивидуально" по обоим подполям, как и в golden.
+    `measure_third_group`/`measure_disabled_child` в эталоне `None`
+    (сверено с эталоном напрямую, `docs/меры_автоагент_2.xlsx`) — не
+    заполняются: страница отдельно оговаривает, что для инвалидов III
+    группы доплата обусловлена работой в конкретных организациях (не
+    "независимо от места работы", как для I/II группы), то есть это уже
+    другая, более узкая норма, а не прямое продолжение той же самой
+    строки; про "ребёнок-инвалид" страница не упоминает вообще.
+
+    `department` НЕ подтверждён этим источником (полнотекстовый поиск
+    "труда и социальной защиты" — 0 совпадений на этой странице) →
+    честно `None`, не копируется из эталона.
+    """
+    confirmed = (
+        "27401 рубля" in amounts_text
+        and "работающих пенсионеров" in amounts_text
+        and "27 401 рубль" in mos_text
+        and "инвалидам I и II группы" in mos_text
+        and "10 лет" in mos_text
+    )
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m_resid = re.search(
+        r"на момент обращения за выплатой зарегистрированы в Москве по месту "
+        r"жительства и продолжительность такой регистрации составляет не "
+        r"менее 10 лет в общей сложности \(включая время проживания на "
+        r"присоединенной к Москве территории\)",
+        mos_text,
+    )
+    m_standard = re.search(
+        r"Ежемесячная компенсационная выплата увеличивает размер пенсии до "
+        r"уровня городского социального стандарта в Москве \(в 2026 году — "
+        r"27 401 рубль\)\.",
+        mos_text,
+    )
+    if m_resid and m_standard:
+        terms = re.sub(r"\s+", " ", f"{m_resid.group(0)}. {m_standard.group(0)}").strip()
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 0,
+        "measureName": seed["measureName"],
+        "measure_first_group": "индивидуально",
+        "measure_second_group": "индивидуально",
+        "measure_third_group": None,
+        "measure_disabled_child": None,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1784,6 +1890,10 @@ def run_disability_seed(seed: dict) -> dict:
     if seed["npaUrl"] == "https://www.mos.ru/otvet-zdorovie/kak-poluchit-socialno-medicinskoe-i-patronazhnoe-obsluzhivanie/":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         return extract_disability_home_social_service_card(seed, mos_text)
+    if seed["npaUrl"] == "https://www.mos.ru/otvet-socialnaya-podderjka/kak-oformit-doplatu-k-pensii-rabotayuschemu-pensioneru/" and seed.get("amountsUrl") == "https://docs.cntd.ru/document/1314770295":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        return extract_disability_pensioner_compensation_card(seed, mos_text, amounts_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."

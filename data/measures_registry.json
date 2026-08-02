@@ -113,6 +113,12 @@
       "region": "Москва",
       "measureName": "Социальное обслуживание на дому и в стационарной форме",
       "npaUrl": "https://www.mos.ru/otvet-zdorovie/kak-poluchit-socialno-medicinskoe-i-patronazhnoe-obsluzhivanie/"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Компенсация отдельным категориям работающих пенсионеров",
+      "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-oformit-doplatu-k-pensii-rabotayuschemu-pensioneru/",
+      "amountsUrl": "https://docs.cntd.ru/document/1314770295"
     }
   ]
 }
