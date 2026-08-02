@@ -119,6 +119,12 @@
       "measureName": "Компенсация отдельным категориям работающих пенсионеров",
       "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-oformit-doplatu-k-pensii-rabotayuschemu-pensioneru/",
       "amountsUrl": "https://docs.cntd.ru/document/1314770295"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Компенсация на оплату услуг местной телефонной связи ",
+      "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-oformit-kompensaciyu-za-stacionarnyy-telefon/",
+      "amountsUrl": "https://dszn.ru/news/145"
     }
   ]
 }

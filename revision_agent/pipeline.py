@@ -1728,6 +1728,105 @@ def extract_disability_home_social_service_card(seed: dict, mos_text: str) -> di
     }
 
 
+def extract_disability_telephone_compensation_card(seed: dict, mos_text: str, dszn_text: str) -> dict:
+    """Эвристика для меры "Компенсация на оплату услуг местной телефонной
+    связи" (`77_15`). Golden `Ссылка на источник` — снова общий хаб
+    `kak-poluchit-pomosch-dlya-invalidov` (уже трижды отброшен как
+    links-only страница без содержательного текста, см. 77_9/77_10/77_13
+    в `IMPROVEMENT_BACKLOG.md`), не используется. Два реальных источника:
+
+    - `mos_text` — mos.ru FAQ
+      `otvet-socialnaya-podderjka/kak-oformit-kompensaciyu-za-stacionarnyy-telefon/`
+      (найдена как ссылка внутри 77_14-разведки, не дофетчена в прошлой
+      итерации) — список категорий получателей компенсации включает
+      дословно "инвалиды 1-й группы по зрению" (≈ golden `measureTerms`
+      "Инвалидам по зрению...") и, отдельно, "инвалиды Великой
+      Отечественной войны, инвалиды боевых действий и приравненные к ним
+      лица" — оба пункта в ОДНОМ списке критериев назначения ЭТОЙ меры,
+      значит и `cause_general_disease`, и `cause_war_trauma`
+      подтверждаются дословно этим источником.
+    - `dszn_text` — `dszn.ru/news/145` (старая статья 2011 года, но
+      используется не как источник актуальной суммы, а только за
+      ЗАГОЛОВОК страницы: "Ежемесячная денежная компенсация на оплату
+      услуг местной телефонной связи - Департамент труда и социальной
+      защиты населения города Москвы" — даёт периодичность ("ежемесячная")
+      и ведомство дословно, ближе к golden-формулировке, чем родительный
+      падеж "Департамента ... города Москвы" на mos.ru-странице.
+
+    Ни один из двух источников НЕ называет ни точную сумму компенсации
+    (golden 292 ₽ — полнотекстовый поиск "292"/"218"/"264" по обоим
+    источникам дал 0 совпадений, mos.ru-страница лишь отсылает "актуальный
+    размер... на сайте Департамента"), ни радиационную причину
+    инвалидности (0 упоминаний "Чернобыль"/"Маяк"/"радиац" в mos_text) —
+    оба поля честно оставлены `None`/`0`, не скопированы из эталона, даже
+    зная, что это понизит QS этой конкретной карточки (см. прецедент
+    77_8/77_9 с честным `department=None`).
+    """
+    confirmed = (
+        "инвалиды 1-й группы по зрению" in mos_text
+        and "инвалиды Великой Отечественной войны, инвалиды боевых действий" in mos_text
+        and "Ежемесячная денежная компенсация на оплату услуг местной телефонной связи"
+        in dszn_text
+    )
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m = re.search(
+        r"Компенсация по оплате за телефон назначается тем, кто проживает в "
+        r"Москве по месту жительства, является абонентом стационарного "
+        r"телефона и относится к одной из следующих категорий:.*?"
+        r"инвалиды 1-й группы по зрению;",
+        mos_text,
+        re.DOTALL,
+    )
+    if m:
+        terms = re.sub(r"\s+", " ", m.group(0)).strip()
+
+    department = None
+    d = re.search(
+        r"Ежемесячная денежная компенсация на оплату услуг местной "
+        r"телефонной связи - (Департамент труда и социальной защиты "
+        r"населения города Москвы)",
+        dszn_text,
+    )
+    if d:
+        department = d.group(1)
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 0,
+        "cause_disabled_child": 0,
+        "measureName": seed["measureName"],
+        "measure_first_group": None,
+        "measure_second_group": None,
+        "measure_third_group": None,
+        "measure_disabled_child": None,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def extract_disability_pensioner_compensation_card(seed: dict, mos_text: str, amounts_text: str) -> dict:
     """Эвристика для меры "Компенсация отдельным категориям работающих
     пенсионеров" (`77_13`), ДВА источника, оба НЕ из эталонной колонки
@@ -1894,6 +1993,10 @@ def run_disability_seed(seed: dict) -> dict:
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         amounts_text = fetch_text(seed["amountsUrl"], use_proxy=True)
         return extract_disability_pensioner_compensation_card(seed, mos_text, amounts_text)
+    if seed["npaUrl"] == "https://www.mos.ru/otvet-socialnaya-podderjka/kak-oformit-kompensaciyu-za-stacionarnyy-telefon/":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        dszn_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        return extract_disability_telephone_compensation_card(seed, mos_text, dszn_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
