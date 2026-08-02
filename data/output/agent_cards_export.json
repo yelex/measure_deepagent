@@ -128,6 +128,19 @@
       "measurePeriodicity": null,
       "measureTerms": "Организация профессионального обучения и дополнительного профессионального образования супруги и детей трудоспособного возраста.",
       "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "categoryMobilized": 0,
+      "categoryContractor": 1,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureName": "Оказание психологической помощи",
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": "Оказание психологической помощи семье.",
+      "department": null
     }
   ],
   "инвалиды": [
