@@ -66,6 +66,11 @@
       "region": "Москва",
       "measureName": "Выплата при заключении контракта",
       "npaUrl": "https://disk.yandex.ru/d/V_LEIMTttBQTeQ"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Ежемесячная выплата",
+      "npaUrl": "https://disk.yandex.ru/d/V_LEIMTttBQTeQ"
     }
   ],
   "инвалиды": [

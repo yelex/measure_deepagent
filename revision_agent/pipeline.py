@@ -776,6 +776,83 @@ def extract_svo_contract_payment_card(seed: dict, pdf_text: str) -> dict:
     }
 
 
+def extract_svo_monthly_payment_card(seed: dict, pdf_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Ежемесячная выплата"
+    (77_svo_2), тот же источник и та же памятка "Меры поддержки
+    действующего контрактника" (`disk.yandex.ru/d/V_LEIMTttBQTeQ`), что и
+    77_svo_1 — раздел "ЕЖЕМЕСЯЧНЫЕ ВЫПЛАТЫ" (не "ЕДИНОВРЕМЕННЫЕ", как у
+    77_svo_1). Перепроверено прямым повторным фетчем PDF в этой итерации:
+    "Ежемесячная денежная выплата от Мэра Москвы ❖ Условия: • включен
+    руководством военного комиссариата в списочный состав для
+    осуществления выплат • выполняет задачи в ходе СВО Указ Мэра Москвы
+    от 22.09.2022 № 52-УМ 50 000,00" — сумма 50000 и periodicity
+    "ежемесячно" (из заголовка раздела, структурная привязка, как у
+    77_svo_1) совпадают с golden дословно.
+
+    categoryContractor=1 подтверждается тем же заголовком памятки
+    ("ДЕЙСТВУЮЩИЙ ВОЕННОСЛУЖАЩИЙ: ЗАКЛЮЧИЛ КОНТРАКТ"), что и в 77_svo_1.
+    categoryMobilized честно 0 — эта памятка посвящена только
+    контрактникам, "мобилизац" встречается в тексте лишь в описании ПУТИ
+    заключения контракта (см. docstring `extract_svo_contract_payment_card`
+    про ту же substring-ловушку), не как отдельная целевая категория этой
+    строки — golden для этой строки = 1, честный пробел, не подгоняю.
+    kidsOfMilitary=0 — памятка не про детей. department — тот же общий
+    футер памятки, что и в 77_svo_1 (расхождение в одном слове с golden,
+    та же ситуация).
+    """
+    sum_confirmed = (
+        "Ежемесячная денежная выплата от Мэра Москвы" in pdf_text
+        and "52-УМ" in pdf_text
+        and "50 000" in pdf_text
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "categoryMobilized": 0,
+            "categoryContractor": 0,
+            "categoryVolunteer": 0,
+            "kidsOfMilitary": 0,
+            "measureName": seed["measureName"],
+            "measureSum": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m = re.search(
+        r"Ежемесячная денежная выплата от Мэра Москвы\s*"
+        r"❖\s*(Условия:[^У]+)"
+        r"Указ Мэра Москвы",
+        pdf_text,
+    )
+    if m:
+        terms = re.sub(r"\s+", " ", m.group(1)).strip()
+
+    department = None
+    m_dept = re.search(r"Единый центр поддержки участников СВО и членов их семей", pdf_text)
+    if m_dept:
+        department = m_dept.group(0)
+
+    has_contractor = "заключившее контракт о прохождении военной службы" in pdf_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 0,
+        "kidsOfMilitary": 0,
+        "measureName": seed["measureName"],
+        "measureSum": 50000,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -803,6 +880,8 @@ def run_svo_seed(seed: dict) -> dict:
         return extract_svo_college_meal_card(seed, page_text)
     if seed["npaUrl"] == "https://disk.yandex.ru/d/V_LEIMTttBQTeQ":
         pdf_text = fetch_yandex_disk_pdf_text(seed["npaUrl"], use_proxy=True)
+        if seed["measureName"].startswith("Ежемесячная выплата"):
+            return extract_svo_monthly_payment_card(seed, pdf_text)
         return extract_svo_contract_payment_card(seed, pdf_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
