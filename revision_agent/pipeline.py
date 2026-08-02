@@ -265,6 +265,53 @@ def extract_svo_kindergarten_enrollment_card(seed: dict, page_text: str) -> dict
     }
 
 
+def extract_svo_kindergarten_fee_exemption_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Освобождение от оплаты за
+    детский сад" (77_svo_7), тот же источник cntd.ru/document/1300860766,
+    что и 77_svo_6/9/10 — п.1.3 указа (НЕ п.1.2, как было в первоначальной
+    таблице сопоставления iteration_20260802_145212 — исправлено ещё в
+    iteration_20260802_115736 прямым повторным фетчем документа:
+    п.1.2="Предоставление внеочередного права на перевод ребенка..."
+    (это 77_svo_8), п.1.3="Освобождение от платы, взимаемой за присмотр и
+    уход..." (это 77_svo_7)). Перепроверено ещё раз в этой итерации —
+    подтверждено.
+
+    measureTerms — реально найден в тексте (п.1.3, дословно про
+    освобождение от платы за присмотр и уход в детсадах). Формулировка не
+    идентична golden (юридическая формулировка НПА про "государственные
+    образовательные организации, предоставляющие дошкольное образование"
+    против golden "детские сады") — тот же факт, извлечён как есть, не
+    подогнан. categoryContractor/categoryVolunteer/kidsOfMilitary/
+    categoryMobilized и department — та же логика и то же системное
+    ограничение источника, что в 77_svo_6/9/10 (единая преамбула ст.1
+    указа, "мобилизован" в документе не встречается ни разу).
+    """
+    terms = None
+    m = re.search(
+        r"(Освобождение от платы, взимаемой за присмотр и уход[^.]+\.)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
+    has_volunteer = "доброволь" in page_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 1,
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -273,6 +320,8 @@ def run_svo_seed(seed: dict) -> dict:
             return extract_svo_school_meal_card(seed, page_text)
         if seed["measureName"].startswith("Зачисление ребёнка в детский сад"):
             return extract_svo_kindergarten_enrollment_card(seed, page_text)
+        if seed["measureName"].startswith("Освобождение от оплаты за детский сад"):
+            return extract_svo_kindergarten_fee_exemption_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "

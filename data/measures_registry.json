@@ -21,6 +21,11 @@
       "region": "Москва",
       "measureName": "Зачисление ребёнка в детский сад",
       "npaUrl": "https://docs.cntd.ru/document/1300860766"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Освобождение от оплаты за детский сад",
+      "npaUrl": "https://docs.cntd.ru/document/1300860766"
     }
   ],
   "инвалиды": [
