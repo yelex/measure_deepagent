@@ -88,6 +88,11 @@
       "measureName": "Региональная компенсация страховой премии по договору ОСАГО",
       "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-invalidu-vernut-chast-stoimosti-polisa-osago/",
       "amountsUrl": "https://dszn.ru/deyatelnost/Socialnaya-integraciya-invalidov/Vyplata-po-dogovoru-obyazatelnogo-strahovaniya-grazhdanskoy-otvetstvennosti-OSAGO-denezhnoy-kompensacii-invalidam-imeyushchim-medicinskie-pokazaniya-na-avtotransport"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Сертификат на отдых и оздоровление на ребёнка-инвалида и сопровождающее лицо",
+      "npaUrl": "https://mosgortur.ru/lok/navigator"
     }
   ]
 }

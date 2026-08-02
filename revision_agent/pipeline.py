@@ -1296,6 +1296,92 @@ def extract_disability_osago_compensation_card(seed: dict, mos_text: str, dszn_t
     }
 
 
+def extract_disability_rehab_vacation_certificate_card(seed: dict, mosgortur_text: str) -> dict:
+    """Эвристика для меры "Сертификат на отдых и оздоровление на
+    ребёнка-инвалида и сопровождающее лицо" (`77_16`), ОДИН источник (как
+    в 77_9/77_10): в эталоне у этой строки нет НПА-полей, `Ссылка на
+    источник` указывает НЕ на общий mos.ru-хаб
+    (`kak-poluchit-pomosch-dlya-invalidov`, уже проверенный и отброшенный
+    для 77_9/77_10 — не содержит текста ни по одной теме), а на
+    конкретную целевую страницу `mosgortur.ru/lok/navigator` — впервые для
+    инвалиды-серии источник вне mos.ru/cntd.ru/dszn.ru (ГАУК «МОСГОРТУР» —
+    подведомственное учреждение Правительства Москвы, страница совпадает
+    дословно с эталонной ссылкой).
+
+    Страница содержит раздел "СЕРТИФИКАТ НА ОТДЫХ И ОЗДОРОВЛЕНИЕ для
+    детей-инвалидов, детей с ограниченными возможностями здоровья":
+    "Для ребенка от 4 до 17 лет и сопровождающего — 40 000 руб. номинал
+    сертификата на ребенка / 40 000 руб. номинал сертификата на
+    сопровождающее лицо" — дословно совпадает с эталонным
+    `measure_disabled_child = '40 000 ₽'` (число). В эталоне
+    `measure_first/second/third_group` пустые (мера — только для
+    ребёнка-инвалида, не для инвалидов групп I-III) → эти три подполя не
+    заполняются, `sum_match` их и не проверяет (см. `sum_match` в
+    `score_against_golden.py`: применяются только непустые в эталоне
+    подполя). Ведомство "ГАУК «МОСГОРТУР»" называется в преамбуле
+    страницы дословно ("Реализовать сертификат можно напрямую в ГАУК
+    «МОСГОРТУР»..."). `measurePeriodicity` ("ежегодно" в эталоне) НЕ
+    подтверждён дословно этой страницей (нет слова "ежегодно"/"раз в
+    год") → честно `None`, не копируется из эталона (это поле не входит в
+    scoring, см. `LS_SPEC`, но конвенция проекта — не выдумывать
+    неподтверждённые значения независимо от того, влияют они на метрику
+    или нет).
+    """
+    confirmed = (
+        "для детей-инвалидов, детей с ограниченными возможностями здоровья" in mosgortur_text
+        and "40 000 руб. номинал сертификата на ребенка" in mosgortur_text
+        and "40 000 руб. номинал сертификата на сопровождающее лицо" in mosgortur_text
+    )
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m = re.search(
+        r"для детей-инвалидов, детей с ограниченными возможностями здоровья\s+(.*?руб\. номинал сертификата на ребенка)",
+        mosgortur_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    department = None
+    d = re.search(r"ГАУК\s*«МОСГОРТУР»", mosgortur_text)
+    if d:
+        department = d.group(0)
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 0,
+        "cause_war_trauma": 0,
+        "cause_radiation": 0,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": None,
+        "measure_second_group": None,
+        "measure_third_group": None,
+        "measure_disabled_child": "40000",
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1337,6 +1423,9 @@ def run_disability_seed(seed: dict) -> dict:
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         dszn_text = fetch_text(seed["amountsUrl"], use_proxy=True)
         return extract_disability_osago_compensation_card(seed, mos_text, dszn_text)
+    if seed["npaUrl"] == "https://mosgortur.ru/lok/navigator":
+        mosgortur_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_disability_rehab_vacation_certificate_card(seed, mosgortur_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
