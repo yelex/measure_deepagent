@@ -98,6 +98,11 @@
       "region": "Москва",
       "measureName": "Региональная компенсация инвалидам на технические средства реабилитации",
       "npaUrl": "https://www.mos.ru/otvet-zdorovie/kak-poluchit-kompensaciyu-za-pokupku-sredstv-reabilitacii-dlya-invalida/"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Бесплатное изготовление и ремонт зубных протезов",
+      "npaUrl": "https://sp53.mos.ru/lgotnoe-zuboprotezirovanie"
     }
   ]
 }

@@ -1473,6 +1473,94 @@ def extract_disability_tsr_compensation_card(seed: dict, mos_text: str) -> dict:
     }
 
 
+def extract_disability_dental_prosthetics_card(seed: dict, mos_text: str) -> dict:
+    """Эвристика для меры "Бесплатное изготовление и ремонт зубных протезов"
+    (`77_14`), ОДИН источник (как в 77_9/77_10/77_16/77_12): эталонная
+    `Нормативно-правовой акт - NPA` — `document/3656309` (Закон города
+    Москвы №70 от 03.11.2004), но сам закон (уже фетчен и проверен для
+    77_13/15 в этой же итерации-разведке) не называет эту меру дословно
+    вообще (0 совпадений "зубн"/"протез") — как и для 77_1/3/4/6/20, закон
+    служит только рамочным определением категорий получателей, конкретные
+    меры устанавливаются производными актами/страницами. Реальный источник
+    найден через WebSearch: `sp53.mos.ru/lgotnoe-zuboprotezirovanie` —
+    сайт ГАУЗ «Стоматологическая поликлиника №53 Департамента
+    здравоохранения города Москвы» (поддомен mos.ru, подпадает под
+    allowlist "mos.ru — отдельно из-за объёма московских региональных
+    мер"), раздел "Льготное зубопротезирование" дословно ссылается на
+    "Законом № 70" — структурное подтверждение правильности эталонного
+    NPA, хоть сам закон и не даёт деталей меры.
+
+    Страница называет ведомство дословно ("Департамента здравоохранения
+    города Москвы", в футере — полное название поликлиники) — совпадает с
+    эталонным department. Golden `measure_first/second/third_group` —
+    текстовое значение "бесплатно" (не число): страница не разбивает
+    льготу по группе инвалидности, адресована категориям в целом
+    ("отдельным категориям жителей города Москвы, установленным Законом
+    № 70... включенным в Единый городской регистр граждан") — как в
+    77_1/77_10/77_11/77_20, все 4 подполя причины/группы заполняются
+    одинаково, но `measure_disabled_child` в эталоне для этой строки
+    `None` (мера не выделяет отдельно детей-инвалидов как самостоятельную
+    категорию на этой странице) → не заполняется, сверено с эталоном
+    напрямую (read-only openpyxl).
+    """
+    confirmed = (
+        "Бесплатное зубопротезирование" in mos_text
+        and "Законом" in mos_text
+        and "70" in mos_text
+        and "Департамента здравоохранения города Москвы" in mos_text
+    )
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    clean_text = mos_text.replace("&quot;", '"')
+
+    terms = None
+    m = re.search(
+        r"Бесплатное зубопротезирование.*?ремонт зубных протезов\.",
+        clean_text,
+    )
+    if m:
+        terms = m.group(0).strip()
+
+    department = None
+    d = re.search(r"Департамента здравоохранения города Москвы", mos_text)
+    if d:
+        department = d.group(0)
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 0,
+        "measureName": seed["measureName"],
+        "measure_first_group": "бесплатно",
+        "measure_second_group": "бесплатно",
+        "measure_third_group": "бесплатно",
+        "measure_disabled_child": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1520,6 +1608,9 @@ def run_disability_seed(seed: dict) -> dict:
     if seed["npaUrl"] == "https://www.mos.ru/otvet-zdorovie/kak-poluchit-kompensaciyu-za-pokupku-sredstv-reabilitacii-dlya-invalida/":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         return extract_disability_tsr_compensation_card(seed, mos_text)
+    if seed["npaUrl"] == "https://sp53.mos.ru/lgotnoe-zuboprotezirovanie":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_disability_dental_prosthetics_card(seed, mos_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
