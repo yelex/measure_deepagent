@@ -77,6 +77,11 @@
       "measureName": "Компенсация гражданам, имеющим заслуги в области физической культуры и спорта",
       "npaUrl": "https://docs.cntd.ru/document/3662941",
       "amountsUrl": "https://docs.cntd.ru/document/1314770295"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Выплата к пенсии инвалидам-ветеранам боевых действий в Афганистане или на Северном Кавказе",
+      "npaUrl": "https://docs.cntd.ru/document/1314770295"
     }
   ]
 }

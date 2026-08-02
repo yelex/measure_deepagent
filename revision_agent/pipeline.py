@@ -1106,6 +1106,101 @@ def extract_disability_sports_merit_card(seed: dict, law_text: str, amounts_text
     }
 
 
+def extract_disability_veteran_bd_pension_card(seed: dict, amounts_text: str) -> dict:
+    """Эвристика для меры "Выплата к пенсии инвалидам-ветеранам боевых
+    действий в Афганистане или на Северном Кавказе" (`77_21`), ОДИН
+    источник (как в 77_9/77_10): эталонная строка не имеет
+    "Нормативно-правовой акт - NPA" (пусто), только "Ссылка на НПА" —
+    постановление №3025-ПП (document/1314770295), уже фетчащееся для
+    77_1/3/4/6/20.
+
+    §4.3.2.1 ("Ежемесячная компенсационная выплата военнослужащим,
+    ставшим инвалидами в ходе контртеррористической операции на Северном
+    Кавказе с 1995 года") и §4.3.2.2 ("...инвалидам вследствие ранения,
+    контузии, увечья или заболевания, полученного при участии в боевых
+    действиях на территории Республики Афганистан") — обе секции дают
+    ОДИНАКОВЫЕ суммы по группам (I/II группа — 8897, III группа — 3412),
+    дословно совпадающие с эталоном. `measurePeriodicity="ежемесячно"`
+    подтверждён заголовком обеих секций. `terms` — комбинация двух
+    заголовков (реальный текст условия: инвалидность вследствие ранения
+    в конкретных боевых действиях), не изобретение.
+
+    `Департамент труда и социальной защиты населения Москвы` (эталонный
+    department) НЕ встречается в этом документе ни разу (проверено
+    полнотекстовым поиском) → честно `None`, не копируется из эталона.
+    `Ссылка на источник` эталона — тот же общий хаб-FAQ mos.ru
+    (`kak-poluchit-pomosch-dlya-invalidov`), уже отброшенный как источник
+    в 77_9/77_10 (обзорная страница без содержательного текста) — не
+    используется.
+    """
+    block_match = re.search(
+        r"4\.3\.2\.1 Ежемесячная компенсационная выплата.*?4\.3\.2\.3",
+        amounts_text,
+        re.DOTALL,
+    )
+    block = block_match.group(0) if block_match else ""
+
+    heading_kavkaz = re.search(
+        r"4\.3\.2\.1 Ежемесячная компенсационная выплата (.*?):", block
+    )
+    heading_afgan = re.search(
+        r"4\.3\.2\.2 Ежемесячная компенсационная выплата (.*?):", block
+    )
+    sum_high_kavkaz = re.search(r"4\.3\.2\.1\.1 инвалидам I и II группы (\d+)", block)
+    sum_low_kavkaz = re.search(r"4\.3\.2\.1\.2 инвалидам III группы (\d+)", block)
+    sum_high_afgan = re.search(r"4\.3\.2\.2\.1 инвалидам I и II группы (\d+)", block)
+    sum_low_afgan = re.search(r"4\.3\.2\.2\.2 инвалидам III группы (\d+)", block)
+
+    sum_confirmed = bool(
+        sum_high_kavkaz
+        and sum_low_kavkaz
+        and sum_high_afgan
+        and sum_low_afgan
+        and sum_high_kavkaz.group(1) == sum_high_afgan.group(1) == "8897"
+        and sum_low_kavkaz.group(1) == sum_low_afgan.group(1) == "3412"
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    if heading_kavkaz and heading_afgan:
+        terms = f"{heading_kavkaz.group(1).strip()}; {heading_afgan.group(1).strip()}"
+        terms = re.sub(r"\s+", " ", terms).strip()
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 0,
+        "cause_war_trauma": 1,
+        "cause_radiation": 0,
+        "cause_disabled_child": 0,
+        "measureName": seed["measureName"],
+        "measure_first_group": sum_high_kavkaz.group(1),
+        "measure_second_group": sum_high_kavkaz.group(1),
+        "measure_third_group": sum_low_kavkaz.group(1),
+        "measure_disabled_child": None,
+        "measurePeriodicity": "ежемесячно",
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1140,6 +1235,9 @@ def run_disability_seed(seed: dict) -> dict:
         if seed["measureName"].startswith("Вознаграждение приёмному родителю"):
             return extract_disability_foster_reward_card(seed, mos_text, amounts_text)
         return extract_disability_guardian_content_card(seed, mos_text, amounts_text)
+    if seed["npaUrl"] == "https://docs.cntd.ru/document/1314770295" and not seed.get("amountsUrl"):
+        amounts_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_disability_veteran_bd_pension_card(seed, amounts_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
