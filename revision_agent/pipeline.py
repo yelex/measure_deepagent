@@ -447,6 +447,55 @@ def extract_svo_hobby_clubs_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_svo_home_social_service_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Социальное обслуживание на
+    дому членов семей участников СВО" (77_svo_14), тот же источник
+    cntd.ru/document/1300860766, что и 77_svo_6/7/8/9/10/11/12 — пп.1.8-1.9
+    указа (следующий непокрытый пункт по таблице сопоставления из
+    IMPROVEMENT_BACKLOG.md B003, подтверждено прямым повторным фетчем
+    документа в этой итерации).
+
+    golden `measureTerms` объединяет ДВЕ формы обслуживания ("на дому, в
+    стационарной или полустационарной форме") — в тексте указа это два
+    отдельных пункта: п.1.8 (социальное обслуживание на дому) и п.1.9
+    (обслуживание в стационарной форме). Оба пункта захватываются и
+    склеиваются в один `measureTerms`, а не берётся только п.1.8, иначе
+    была бы отражена только половина golden-условия.
+    categoryContractor/categoryVolunteer/kidsOfMilitary/categoryMobilized —
+    та же логика и то же системное ограничение источника, что во всех
+    предыдущих сво-seed'ах (единая преамбула ст.1 указа, "мобилизован" в
+    документе не встречается ни разу). `department` — п.1.9 называет
+    "Департамент труда и социальной защиты населения города Москвы", НЕ
+    golden "Единый центр поддержки участников СВО и их семей" — честно
+    `None`, не подгоняется.
+    """
+    terms_parts = []
+    m8 = re.search(r"(Оказание организациями социального обслуживания[^.]+\.)", page_text)
+    if m8:
+        terms_parts.append(m8.group(1).strip())
+    m9 = re.search(r"(Направление в первоочередном порядке[^.]+стационарной форме[^.]*\.)", page_text)
+    if m9:
+        terms_parts.append(m9.group(1).strip())
+    terms = " ".join(terms_parts) if terms_parts else None
+
+    has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
+    has_volunteer = "доброволь" in page_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 1,
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -463,6 +512,8 @@ def run_svo_seed(seed: dict) -> dict:
             return extract_svo_extended_day_group_card(seed, page_text)
         if seed["measureName"].startswith("Бесплатное посещение кружков и секций"):
             return extract_svo_hobby_clubs_card(seed, page_text)
+        if seed["measureName"].startswith("Социальное обслуживание на дому членов семей"):
+            return extract_svo_home_social_service_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
