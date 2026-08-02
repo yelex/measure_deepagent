@@ -361,6 +361,50 @@ def extract_svo_kindergarten_transfer_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_svo_extended_day_group_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Зачисление в группы
+    продлённого дня и освобождение от их оплаты" (77_svo_11), тот же
+    источник cntd.ru/document/1300860766, что и 77_svo_6/7/8/9/10 — п.1.6
+    указа (следующий непокрытый пункт по таблице сопоставления из
+    IMPROVEMENT_BACKLOG.md B003, подтверждено прямым повторным фетчем всего
+    блока пп.1.1-1.14 в этой итерации — п.1.6 дословно про группы
+    продлённого дня, самое сильное текстовое совпадение с golden
+    `measureName` из всей серии).
+
+    measureTerms — реально найден в тексте (п.1.6, дословно про
+    первоочередное зачисление детей 1-6 классов в группы продлённого дня и
+    освобождение от платы за присмотр и уход в этих группах).
+    categoryContractor/categoryVolunteer/kidsOfMilitary/categoryMobilized и
+    department — та же логика и то же системное ограничение источника, что
+    в 77_svo_6/7/8/9/10 (единая преамбула ст.1 указа, "мобилизован" в
+    документе не встречается ни разу).
+    """
+    terms = None
+    m = re.search(
+        r"(Зачисление в первоочередном порядке детей[^.]+\.)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
+    has_volunteer = "доброволь" in page_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 1,
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -373,6 +417,8 @@ def run_svo_seed(seed: dict) -> dict:
             return extract_svo_kindergarten_fee_exemption_card(seed, page_text)
         if seed["measureName"].startswith("Перевод в детский сад или школу"):
             return extract_svo_kindergarten_transfer_card(seed, page_text)
+        if seed["measureName"].startswith("Зачисление в группы продлённого дня"):
+            return extract_svo_extended_day_group_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
