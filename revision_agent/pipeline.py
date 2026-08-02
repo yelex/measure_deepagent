@@ -405,6 +405,48 @@ def extract_svo_extended_day_group_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_svo_hobby_clubs_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Бесплатное посещение кружков
+    и секций" (77_svo_12), тот же источник cntd.ru/document/1300860766,
+    что и 77_svo_6/7/8/9/10/11 — п.1.7 указа (следующий непокрытый пункт
+    по таблице сопоставления из IMPROVEMENT_BACKLOG.md B003, вся таблица
+    пп.1.1-1.14 сверена целиком в iteration_20260802_121632; п.1.7
+    перепроверен прямым повторным фетчем документа в этой итерации —
+    подтверждено).
+
+    measureTerms — реально найден в тексте (п.1.7, дословно про бесплатное
+    посещение занятий по дополнительным общеобразовательным программам —
+    кружки, секции). categoryContractor/categoryVolunteer/kidsOfMilitary/
+    categoryMobilized и department — та же логика и то же системное
+    ограничение источника, что в 77_svo_6/7/8/9/10/11 (единая преамбула
+    ст.1 указа, "мобилизован" в документе не встречается ни разу).
+    """
+    terms = None
+    m = re.search(
+        r"(Предоставление детям бесплатного посещения занятий[^.]+\.)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
+    has_volunteer = "доброволь" in page_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 1,
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -419,6 +461,8 @@ def run_svo_seed(seed: dict) -> dict:
             return extract_svo_kindergarten_transfer_card(seed, page_text)
         if seed["measureName"].startswith("Зачисление в группы продлённого дня"):
             return extract_svo_extended_day_group_card(seed, page_text)
+        if seed["measureName"].startswith("Бесплатное посещение кружков и секций"):
+            return extract_svo_hobby_clubs_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
