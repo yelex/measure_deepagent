@@ -39,9 +39,15 @@ verification_subagent на deepagents/LLM) — та требует LLM_PROVIDER,
 from __future__ import annotations
 
 import http.cookiejar
+import io
+import json
 import os
 import re
+import urllib.parse
 import urllib.request
+import zipfile
+
+from pypdf import PdfReader
 
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
@@ -86,6 +92,55 @@ def fetch_text(url: str, timeout: int = 15, use_proxy: bool = False) -> str:
     text = _unescape_js_unicode(text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
+
+
+def fetch_yandex_disk_pdf_text(public_url: str, timeout: int = 30, use_proxy: bool = False) -> str:
+    """Скачивает PDF, опубликованный по прямой ссылке Яндекс.Диска, и
+    возвращает извлечённый текст (все страницы, разделённые маркером).
+
+    `msupport.dszn.ru/pamyatki` (allowlist-поддомен `dszn.ru`) сам по себе
+    — хаб-страница без текста мер (см. docstring
+    `extract_svo_college_meal_card`), она лишь ссылается на PDF-памятки,
+    захостенные на Яндекс.Диске самим "Единым центром поддержки
+    участников СВО". Это не сторонний агрегатор льгот — прямой файл
+    официального источника, отданный по ссылке с allowlist-страницы.
+
+    Публичный API Диска (`cloud-api.yandex.net/v1/disk/public/resources/
+    download`, без ключа) возвращает JSON с временной ссылкой на ZIP,
+    содержащий один PDF-файл — сам Диск заворачивает публичные файлы в
+    ZIP при скачивании по этому эндпоинту, ключа/логина не требует.
+    """
+    api_url = (
+        "https://cloud-api.yandex.net/v1/disk/public/resources/download"
+        f"?public_key={urllib.parse.quote(public_url, safe='')}"
+    )
+
+    if use_proxy:
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({"http": RU_PROXY_URL, "https": RU_PROXY_URL}),
+        )
+    else:
+        opener = urllib.request.build_opener()
+    opener.addheaders = [("User-Agent", USER_AGENT)]
+
+    with opener.open(api_url, timeout=timeout) as resp:
+        download_href = json.loads(resp.read().decode("utf-8"))["href"]
+
+    with opener.open(download_href, timeout=timeout) as resp:
+        zip_bytes = resp.read()
+
+    pages = []
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        pdf_names = [n for n in zf.namelist() if n.lower().endswith(".pdf")]
+        if not pdf_names:
+            raise ValueError(f"В ZIP с Яндекс.Диска ({public_url}) не найден PDF: {zf.namelist()}")
+        with zf.open(pdf_names[0]) as pdf_file:
+            reader = PdfReader(io.BytesIO(pdf_file.read()))
+            for page in reader.pages:
+                pages.append(page.extract_text() or "")
+
+    text = "\n---PAGE---\n".join(pages)
+    return re.sub(r"[ \t]+", " ", text).strip()
 
 
 def extract_vbd_aeroexpress_card(seed: dict, page_text: str) -> dict:
@@ -630,6 +685,97 @@ def extract_svo_legal_aid_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_svo_contract_payment_card(seed: dict, pdf_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Выплата при заключении
+    контракта" (77_svo_1). ПЕРВЫЙ сво-seed с источником НЕ на
+    cntd.ru/1300860766: эталонная `Ссылка на источник` для этой и ещё 4
+    сво-мер (77_svo_2/3/16/18) — `msupport.dszn.ru/pamyatki`, хаб-страница
+    без текста в HTML (см. открытый вопрос в docstring
+    `extract_svo_college_meal_card`). Хаб ссылается на PDF-памятки на
+    Яндекс.Диске, захостенные самим "Единым центром поддержки участников
+    СВО" (см. `fetch_yandex_disk_pdf_text`) — здесь используется памятка
+    "Меры поддержки действующего контрактника"
+    (`disk.yandex.ru/d/V_LEIMTttBQTeQ`).
+
+    Раздел "ЕДИНОВРЕМЕННЫЕ ДЕНЕЖНЫЕ ВЫПЛАТЫ" памятки содержит строку
+    "Единовременная денежная выплата от Мэра Москвы" (Указ Мэра Москвы от
+    23.07.2024 № 58-УМ) с суммой 1 900 000,00 ₽ — дословное совпадение с
+    golden `measureSum`. `measurePeriodicity="единовременно"` — из
+    заголовка раздела (структурная, а не угаданная привязка: строка
+    физически находится под этим заголовком, ниже "ЕЖЕМЕСЯЧНЫЕ ВЫПЛАТЫ").
+    `department` — общий футер памятки ("Москва, Единый центр поддержки
+    участников СВО и членов их семей") практически дословно совпадает с
+    golden ("... и их семей", не "... и членов их семей" — расхождение в
+    одном слове, не подгоняю под эталон).
+
+    categoryContractor=1 подтверждается заголовком памятки ("ДЕЙСТВУЮЩИЙ
+    ВОЕННОСЛУЖАЩИЙ: ЗАКЛЮЧИЛ КОНТРАКТ" + преамбула "лицо (военнослужащий),
+    заключившее контракт о прохождении военной службы с Министерством
+    обороны РФ"). categoryMobilized/categoryVolunteer честно 0 — эта
+    конкретная памятка посвящена только контрактникам, "мобилизац"/
+    "доброволец" в её тексте не встречаются ни разу (у golden для этой
+    строки они тоже 0). kidsOfMilitary=0 — памятка не про детей.
+    """
+    sum_confirmed = (
+        "Единовременная денежная выплата от Мэра Москвы" in pdf_text
+        and "58-УМ" in pdf_text
+        and "1 900 000" in pdf_text
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "categoryMobilized": 0,
+            "categoryContractor": 0,
+            "categoryVolunteer": 0,
+            "kidsOfMilitary": 0,
+            "measureName": seed["measureName"],
+            "measureSum": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m = re.search(
+        r"Единовременная денежная выплата от Мэра Москвы\s*"
+        r"(распространяется на правоотношения[^❖]*)"
+        r"❖\s*(Условие:[^;]+;)",
+        pdf_text,
+    )
+    if m:
+        terms = re.sub(r"\s+", " ", (m.group(1) + " " + m.group(2))).strip()
+
+    department = None
+    m_dept = re.search(r"Единый центр поддержки участников СВО и членов их семей", pdf_text)
+    if m_dept:
+        department = m_dept.group(0)
+
+    has_contractor = "заключившее контракт о прохождении военной службы" in pdf_text
+    has_volunteer = "доброволец" in pdf_text.lower() or "добровольц" in pdf_text.lower()
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        # Памятка озаглавлена "ЗАКЛЮЧИЛ КОНТРАКТ" (не "МОБИЛИЗОВАН") — это
+        # отдельная категория со своей памяткой у того же источника.
+        # "мобилизации" встречается в тексте только в описании ПУТИ
+        # заключения контракта (контракт во время службы по призыву либо
+        # мобилизации), не как отдельная целевая категория этой меры —
+        # substring-поиск здесь дал бы ложное срабатывание, не угадываю.
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 0,
+        "measureName": seed["measureName"],
+        "measureSum": 1900000,
+        "measurePeriodicity": "единовременно",
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -655,6 +801,9 @@ def run_svo_seed(seed: dict) -> dict:
         if seed["measureName"].startswith("Бесплатная юридическая помощь"):
             return extract_svo_legal_aid_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
+    if seed["npaUrl"] == "https://disk.yandex.ru/d/V_LEIMTttBQTeQ":
+        pdf_text = fetch_yandex_disk_pdf_text(seed["npaUrl"], use_proxy=True)
+        return extract_svo_contract_payment_card(seed, pdf_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."

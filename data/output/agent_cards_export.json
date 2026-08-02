@@ -154,6 +154,19 @@
       "measurePeriodicity": null,
       "measureTerms": "Консультирование семьи по юридическим вопросам.",
       "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "categoryMobilized": 0,
+      "categoryContractor": 1,
+      "categoryVolunteer": 0,
+      "kidsOfMilitary": 0,
+      "measureName": "Выплата при заключении контракта",
+      "measureSum": 1900000,
+      "measurePeriodicity": "единовременно",
+      "measureTerms": "распространяется на правоотношения, возникшие с 23.07.2024 Условие: воинская часть, должна быть установлена в соответствии с заданием Министерства обороны РФ;",
+      "department": "Единый центр поддержки участников СВО и членов их семей"
     }
   ],
   "инвалиды": [
