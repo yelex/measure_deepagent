@@ -108,6 +108,11 @@
       "region": "Москва",
       "measureName": "Социальное такси",
       "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-polzovatsya-socialnym-taksi/"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Социальное обслуживание на дому и в стационарной форме",
+      "npaUrl": "https://www.mos.ru/otvet-zdorovie/kak-poluchit-socialno-medicinskoe-i-patronazhnoe-obsluzhivanie/"
     }
   ]
 }

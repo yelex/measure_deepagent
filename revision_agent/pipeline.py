@@ -1644,6 +1644,90 @@ def extract_disability_social_taxi_card(seed: dict, mos_text: str) -> dict:
     }
 
 
+def extract_disability_home_social_service_card(seed: dict, mos_text: str) -> dict:
+    """Эвристика для меры "Социальное обслуживание на дому и в
+    стационарной форме" (`77_19`), ОДИН источник (как в 77_9/77_10/77_12/
+    77_14/77_16/77_17): эталонная `Ссылка на источник` — снова уже дважды
+    отброшенный общий хаб `kak-poluchit-pomosch-dlya-invalidov` (не даёт
+    содержательного текста, см. 77_9/77_10 в PROGRAM.md).
+
+    Реальный источник найден через `WebSearch` (SearXNG недоступен в этой
+    сессии — `docker` daemon не поднят, как и в 77_11/77_12):
+    `mos.ru/otvet-zdorovie/kak-poluchit-socialno-medicinskoe-i-patronazhnoe-obsluzhivanie/`
+    — обычная otvet-FAQ-страница (тема шире одной меры — соцобслуживание в
+    целом, не только для инвалидов), вопрос №1 "Кто имеет право на
+    социальное обслуживание?" даёт условие ПОЧТИ ДОСЛОВНО golden `terms`
+    ("Факт установления инвалидности, детям-инвалидам, частично или
+    полностью утратившим способность к самообслуживанию"): "предоставляют
+    социальные услуги гражданам, частично или полностью утратившим
+    способность к самообслуживанию. Услуги предоставляются бесплатно, за
+    частичную или полную плату." — совпадает и условие, и структура
+    оплаты (golden `measure_first/second_group`/`measure_disabled_child`
+    = "бесплатно или за частичную плату").
+
+    Источник не разбивает форму оплаты по группе инвалидности/причине —
+    структурный факт (единая норма на всех получателей социального
+    обслуживания, не только инвалидов) → `measure_first/second/third_group`
+    и `measure_disabled_child` заполнены ОДИНАКОВО, как в 77_1/77_10/77_20.
+
+    `department` — "Департамент труда и социальной защиты населения
+    Москвы" называется на странице дословно (в контексте адреса для
+    очного обращения), совпадает с golden `department` буквально.
+    """
+    confirmed = (
+        "частично или полностью утратившим способность к самообслуживанию" in mos_text
+        and "предоставляются" in mos_text
+        and "Департамент труда и социальной защиты населения Москвы" in mos_text
+    )
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m = re.search(
+        r"предоставляют социальные услуги гражданам, частично или полностью "
+        r"утратившим способность к самообслуживанию\.\s*Услуги предоставляются "
+        r"бесплатно\s*,\s*за частичную или полную плату\s*\.",
+        mos_text,
+    )
+    if m:
+        terms = re.sub(r"\s+", " ", m.group(0)).strip()
+
+    department = "Департамент труда и социальной защиты населения Москвы"
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": "бесплатно или за частичную плату",
+        "measure_second_group": "бесплатно или за частичную плату",
+        "measure_third_group": None,
+        "measure_disabled_child": "бесплатно или за частичную плату",
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1697,6 +1781,9 @@ def run_disability_seed(seed: dict) -> dict:
     if seed["npaUrl"] == "https://www.mos.ru/otvet-socialnaya-podderjka/kak-polzovatsya-socialnym-taksi/":
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         return extract_disability_social_taxi_card(seed, mos_text)
+    if seed["npaUrl"] == "https://www.mos.ru/otvet-zdorovie/kak-poluchit-socialno-medicinskoe-i-patronazhnoe-obsluzhivanie/":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_disability_home_social_service_card(seed, mos_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
