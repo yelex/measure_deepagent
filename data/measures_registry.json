@@ -82,6 +82,12 @@
       "region": "Москва",
       "measureName": "Выплата к пенсии инвалидам-ветеранам боевых действий в Афганистане или на Северном Кавказе",
       "npaUrl": "https://docs.cntd.ru/document/1314770295"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Региональная компенсация страховой премии по договору ОСАГО",
+      "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-invalidu-vernut-chast-stoimosti-polisa-osago/",
+      "amountsUrl": "https://dszn.ru/deyatelnost/Socialnaya-integraciya-invalidov/Vyplata-po-dogovoru-obyazatelnogo-strahovaniya-grazhdanskoy-otvetstvennosti-OSAGO-denezhnoy-kompensacii-invalidam-imeyushchim-medicinskie-pokazaniya-na-avtotransport"
     }
   ]
 }

@@ -1201,6 +1201,101 @@ def extract_disability_veteran_bd_pension_card(seed: dict, amounts_text: str) ->
     }
 
 
+def extract_disability_osago_compensation_card(seed: dict, mos_text: str, dszn_text: str) -> dict:
+    """Эвристика для меры "Региональная компенсация страховой премии по
+    договору ОСАГО" (`77_11`), два НОВЫХ источника (не переиспользуют закон
+    3662941/постановление 1314770295, оба уже фетчащихся для 77_1/3/4/6/20/21
+    проверены полнотекстовым поиском на "ОСАГО"/"страхов" и НЕ содержат этой
+    льготы вообще — эталонный `document/3662941?marker=7DE0K6` формально
+    ссылается на закон N60, но содержательно льгота установлена подзаконным
+    актом (распоряжение Правительства Москвы №430-РП, найдено через
+    WebSearch — SearXNG в этой сессии недоступен, `docker` daemon не
+    поднят, см. trace-файл итерации):
+
+    - `mos_text` — `mos.ru/otvet-socialnaya-podderjka/kak-invalidu-vernut-chast-stoimosti-polisa-osago/`,
+      тот же паттерн `otvet-`-FAQ, что и 77_7/8/9. Вопрос "В каком размере
+      выплачивается компенсация?" даёт "1980 рублей за счет бюджета города
+      Москвы" дословно; вопрос "Кто и при каких условиях может вернуть
+      часть стоимости полиса ОСАГО?" даёт реальный текст условия
+      (медицинские показания + ИПРА + не более двух водителей на полис).
+    - `dszn_text` — официальный сайт Департамента труда и социальной
+      защиты населения города Москвы (dszn.ru, региональный портал
+      соцзащиты из allowlist `AGENTS.md`), страница называется по этой
+      же льготе. Подтверждает сумму независимо ("1 980 рублей в год") И,
+      впервые для инвалиды-серии, называет ведомство ДОСЛОВНО прямо в
+      заголовке страницы ("Департамент труда и социальной защиты
+      населения города Москвы") — до этого `department` был `None` в
+      10 из 12 предыдущих карточек инвалиды (источники не называли
+      ведомство рядом со льготой).
+
+    Источник не разбивает выплату по группе инвалидности/причине
+    (применяется к "инвалидам и детям-инвалидам" без разбивки) — как в
+    77_1/77_10/77_20, все 4 подполя (`measure_first/second/third_group`,
+    `measure_disabled_child`) заполняются одинаковым значением 1980.
+    `measurePeriodicity="ежегодно"` — впервые для серии (не "ежемесячно"
+    как в 77_7/8/9, не "единовременно" как в эталоне 77_10) — подтверждено
+    dszn.ru ("1 980 рублей в год").
+    """
+    sum_confirmed = (
+        "1980 рублей" in mos_text
+        and "за счет бюджета города Москвы" in mos_text
+        and "1 980" in dszn_text
+        and "в год" in dszn_text
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m = re.search(
+        r'"id":807,"title":"[^"]*","blocks":\[\{"type":"text","id":906,"text":"(.*?)"\}\]\},\{"id":808',
+        mos_text,
+        re.DOTALL,
+    )
+    if m:
+        raw = re.sub(r'data-hint-content=\\".*?\\"', "", m.group(1))
+        raw = raw.replace("&nbsp;", " ")
+        terms = re.sub(r"<[^>]+>", " ", raw)
+        terms = re.sub(r"\s+", " ", terms).strip()
+
+    department = None
+    d = re.search(r"Департамент труда и социальной защиты населения города Москвы", dszn_text)
+    if d:
+        department = d.group(0)
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": "1980",
+        "measure_second_group": "1980",
+        "measure_third_group": "1980",
+        "measure_disabled_child": "1980",
+        "measurePeriodicity": "ежегодно",
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1238,6 +1333,10 @@ def run_disability_seed(seed: dict) -> dict:
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1314770295" and not seed.get("amountsUrl"):
         amounts_text = fetch_text(seed["npaUrl"], use_proxy=True)
         return extract_disability_veteran_bd_pension_card(seed, amounts_text)
+    if seed["npaUrl"] == "https://www.mos.ru/otvet-socialnaya-podderjka/kak-invalidu-vernut-chast-stoimosti-polisa-osago/":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        dszn_text = fetch_text(seed["amountsUrl"], use_proxy=True)
+        return extract_disability_osago_compensation_card(seed, mos_text, dszn_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
