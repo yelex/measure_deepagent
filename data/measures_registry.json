@@ -93,6 +93,11 @@
       "region": "Москва",
       "measureName": "Сертификат на отдых и оздоровление на ребёнка-инвалида и сопровождающее лицо",
       "npaUrl": "https://mosgortur.ru/lok/navigator"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Региональная компенсация инвалидам на технические средства реабилитации",
+      "npaUrl": "https://www.mos.ru/otvet-zdorovie/kak-poluchit-kompensaciyu-za-pokupku-sredstv-reabilitacii-dlya-invalida/"
     }
   ]
 }

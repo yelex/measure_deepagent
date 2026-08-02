@@ -1382,6 +1382,97 @@ def extract_disability_rehab_vacation_certificate_card(seed: dict, mosgortur_tex
     }
 
 
+def extract_disability_tsr_compensation_card(seed: dict, mos_text: str) -> dict:
+    """Эвристика для меры "Региональная компенсация инвалидам на технические
+    средства реабилитации" (`77_12`), ОДИН источник (как в 77_9/77_10/77_16):
+    оба уже фетчащихся источника (закон 3662941, постановление 1314770295)
+    проверены полнотекстовым поиском на названия предметов ("прикроватн",
+    "ступеньк", "насадка на унитаз" и т.д.) — 0 совпадений в обоих, льгота
+    не установлена ни базовым законом, ни постановлением о размерах.
+    Реальный источник найден через WebSearch (SearXNG в этой сессии
+    недоступен): `mos.ru/otvet-zdorovie/kak-poluchit-kompensaciyu-za-pokupku-sredstv-reabilitacii-dlya-invalida/`
+    — обычная otvet-FAQ-страница mos.ru (тот же паттерн, что 77_7/8/9/11),
+    вопрос №5 ("Как получить выплату на самостоятельное приобретение
+    технических средств реабилитации?") даёт условие и полный список из 7
+    предметов дословно совпадающими с эталонным перечнем в `measureTerms`
+    (столик прикроватный, стул для ванны и душа, сиденье для ванны,
+    ступенька для ванны, насадка на унитаз, доска для ванны, доска для
+    пересаживания); отдельное предложение страницы называет
+    "Департамента труда и социальной защиты населения" как источник
+    сведений о размере компенсации — совпадает с эталонным department
+    (в родительном падеже, как и в 77_11 — text_field_match проходит по
+    Jaccard, не по точному совпадению словоформы).
+
+    Golden `measure_first/second/third_group`/`measure_disabled_child` —
+    не число, а слово "компенсация": сумма варьируется по конкретному
+    предмету (страница отсылает за размером на сайт департамента, не
+    называет единую цифру), поэтому эталон тоже использует текстовое
+    значение вместо суммы. `sum_field_match` в scorer'е делает fallback на
+    `text_field_match`, когда `extract_number` не находит цифр ни у
+    агента, ни в эталоне — совпадение строки "компенсация" должно пройти.
+    Источник не разбивает льготу по группе инвалидности/причине
+    (адресована "инвалидам"/"ребёнку-инвалиду" без разбивки) — как в
+    77_1/77_10/77_11/77_20, все 4 подполя заполняются одинаковым значением.
+    """
+    item_list_confirmed = (
+        "прикроватного столика" in mos_text
+        and "стула для ванны и душа" in mos_text
+        and "сиденья для ванны" in mos_text
+        and "ступеньки для ванны" in mos_text
+        and "насадки на унитаз" in mos_text
+        and "доски для ванны" in mos_text
+        and "доски для пересаживания" in mos_text
+    )
+
+    if not item_list_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m = re.search(
+        r"Если вы зарегистрированы в Москве по месту жительства и вам назначены.*?компенсацией до покупки\.",
+        mos_text,
+    )
+    if m:
+        terms = m.group(0).strip()
+
+    department = None
+    d = re.search(r"Департамента труда и социальной защиты населения", mos_text)
+    if d:
+        department = d.group(0)
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 1,
+        "measureName": seed["measureName"],
+        "measure_first_group": "компенсация",
+        "measure_second_group": "компенсация",
+        "measure_third_group": "компенсация",
+        "measure_disabled_child": "компенсация",
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -1426,6 +1517,9 @@ def run_disability_seed(seed: dict) -> dict:
     if seed["npaUrl"] == "https://mosgortur.ru/lok/navigator":
         mosgortur_text = fetch_text(seed["npaUrl"], use_proxy=True)
         return extract_disability_rehab_vacation_certificate_card(seed, mosgortur_text)
+    if seed["npaUrl"] == "https://www.mos.ru/otvet-zdorovie/kak-poluchit-kompensaciyu-za-pokupku-sredstv-reabilitacii-dlya-invalida/":
+        mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        return extract_disability_tsr_compensation_card(seed, mos_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
