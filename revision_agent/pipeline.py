@@ -43,6 +43,7 @@ import io
 import json
 import os
 import re
+import subprocess
 import urllib.parse
 import urllib.request
 import zipfile
@@ -67,12 +68,38 @@ def _unescape_js_unicode(text: str) -> str:
     return re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), text)
 
 
-def fetch_text(url: str, timeout: int = 15, use_proxy: bool = False) -> str:
+def fetch_text(url: str, timeout: int = 15, use_proxy: bool = False, via_jina: bool = False) -> str:
     """Скачивает страницу и возвращает текст без HTML-тегов.
 
     use_proxy=True — через RU_PROXY_URL с cookie jar (нужно для
     источников с SSO-редиректом вроде cntd.ru, см. docstring модуля).
+
+    via_jina=True — через r.jina.ai (https://r.jina.ai/<url>), бесплатный
+    readable-прокси: фетчит серверной стороной Jina (не из этой
+    песочницы) и отдаёт уже чистый markdown, без тегов/скриптов/эскейпов.
+    Найден 2026-08-03 как обход одновременно и недоступности прокси
+    пользователя (см. RU_PROXY_URL), и ГОСТ-TLS на mos.ru (см.
+    IMPROVEMENT_BACKLOG.md B005) — cntd.ru стабильно 200, mos.ru не
+    всегда (иногда 422 Timeout при рендеринге страницы), не 100%-ная
+    замена прокси, но рабочий дополнительный путь.
+
+    Реализовано через `curl` (subprocess), не `urllib`: Cloudflare перед
+    r.jina.ai блокирует именно TLS/HTTP-отпечаток urllib с кодом 1010
+    ("banned based on your browser's signature") независимо от
+    заголовков — проверено явно, смена User-Agent не помогает, смена
+    клиента (urllib → curl) помогает всегда.
     """
+    if via_jina:
+        result = subprocess.run(
+            ["curl", "-s", "-f", "--max-time", str(timeout), f"https://r.jina.ai/{url}"],
+            capture_output=True, timeout=timeout + 5,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"curl->r.jina.ai не удался для {url!r} (код {result.returncode}): "
+                f"{result.stderr.decode('utf-8', errors='ignore')[:300]}"
+            )
+        return result.stdout.decode("utf-8", errors="ignore").strip()
     if use_proxy:
         cj = http.cookiejar.CookieJar()
         opener = urllib.request.build_opener(
@@ -87,6 +114,8 @@ def fetch_text(url: str, timeout: int = 15, use_proxy: bool = False) -> str:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
 
+    html = re.sub(r"<script\b[^>]*>.*?</script>", " ", html, flags=re.DOTALL | re.IGNORECASE)
+    html = re.sub(r"<style\b[^>]*>.*?</style>", " ", html, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r"<[^>]+>", " ", html)
     text = text.replace("&nbsp;", " ").replace("&laquo;", "«").replace("&raquo;", "»")
     text = _unescape_js_unicode(text)
