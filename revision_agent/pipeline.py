@@ -53,6 +53,14 @@ from pypdf import PdfReader
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 
+# Указ Мэра Москвы от 05.10.2022 №56-УМ "О дополнительных мерах социальной
+# поддержки семьям лиц, призванных на военную службу по мобилизации" —
+# параллельный указу №8-УМ (cntd.ru/1300860766) документ с тем же набором
+# мер, но для мобилизованных (см. B013, IMPROVEMENT_BACKLOG.md). Источник —
+# `rg.ru` (официальный публикатор НПА), не `mos.ru`/`docs.cntd.ru`: оба
+# недостижимы в этой сессии (см. B005/B007) для этого конкретного документа.
+SVO_MOBILIZATION_DECREE_URL = "https://rg.ru/documents/2022/10/05/moscow-ukaz56-reg-dok.html"
+
 # Российский прокси пользователя для доступа к cntd.ru/mos.ru и т.п. из
 # площадок без прямого доступа к рунету (тот же прокси, что и в
 # родственных проектах `auto`, `social-support-agent`). Переопределяется
@@ -356,7 +364,7 @@ def run_vbd_seed(seed: dict) -> dict:
     )
 
 
-def extract_svo_college_meal_card(seed: dict, page_text: str) -> dict:
+def extract_svo_college_meal_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Бесплатное питание в
     колледжах" (77_svo_10), источник cntd.ru/document/1300860766 (Указ
     Мэра Москвы "О дополнительных мерах социальной поддержки...").
@@ -384,11 +392,15 @@ def extract_svo_college_meal_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.5 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Предоставление бесплатного одноразового горячего питания (обед) студентам" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -400,7 +412,7 @@ def extract_svo_college_meal_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_school_meal_card(seed: dict, page_text: str) -> dict:
+def extract_svo_school_meal_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Бесплатное питание в школах"
     (77_svo_9), тот же источник cntd.ru/document/1300860766, что и
     77_svo_10 (extract_svo_college_meal_card) — п.1.4 указа, а не п.1.5.
@@ -429,11 +441,15 @@ def extract_svo_school_meal_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.4 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Предоставление бесплатного двухразового горячего питания" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -445,7 +461,7 @@ def extract_svo_school_meal_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_kindergarten_enrollment_card(seed: dict, page_text: str) -> dict:
+def extract_svo_kindergarten_enrollment_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Зачисление ребёнка в детский
     сад" (77_svo_6), тот же источник cntd.ru/document/1300860766, что и
     77_svo_9/77_svo_10 — п.1.1 указа (а не п.1.4/п.1.5).
@@ -473,11 +489,15 @@ def extract_svo_kindergarten_enrollment_card(seed: dict, page_text: str) -> dict
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.1 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Направление во внеочередном порядке детей по достижении ими возраста полутора лет" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -489,7 +509,7 @@ def extract_svo_kindergarten_enrollment_card(seed: dict, page_text: str) -> dict
     }
 
 
-def extract_svo_kindergarten_fee_exemption_card(seed: dict, page_text: str) -> dict:
+def extract_svo_kindergarten_fee_exemption_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Освобождение от оплаты за
     детский сад" (77_svo_7), тот же источник cntd.ru/document/1300860766,
     что и 77_svo_6/9/10 — п.1.3 указа (НЕ п.1.2, как было в первоначальной
@@ -520,11 +540,15 @@ def extract_svo_kindergarten_fee_exemption_card(seed: dict, page_text: str) -> d
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.3 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Освобождение от платы, взимаемой за присмотр и уход за ребенком в государственных образовательных организациях" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -536,7 +560,7 @@ def extract_svo_kindergarten_fee_exemption_card(seed: dict, page_text: str) -> d
     }
 
 
-def extract_svo_kindergarten_transfer_card(seed: dict, page_text: str) -> dict:
+def extract_svo_kindergarten_transfer_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Перевод в детский сад или
     школу рядом с домом" (77_svo_8), тот же источник
     cntd.ru/document/1300860766, что и 77_svo_6/7/9/10 — п.1.2 указа
@@ -569,11 +593,15 @@ def extract_svo_kindergarten_transfer_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.2 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Предоставление внеочередного права на перевод ребенка в другую наиболее приближенную к месту жительства семьи" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -585,7 +613,7 @@ def extract_svo_kindergarten_transfer_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_extended_day_group_card(seed: dict, page_text: str) -> dict:
+def extract_svo_extended_day_group_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Зачисление в группы
     продлённого дня и освобождение от их оплаты" (77_svo_11), тот же
     источник cntd.ru/document/1300860766, что и 77_svo_6/7/8/9/10 — п.1.6
@@ -613,11 +641,18 @@ def extract_svo_extended_day_group_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.6 — тот же пункт для указа
+    # 8-УМ (порядок слов в 56-УМ отличается — "в группы продленного дня
+    # детей" вместо "детей... в группы продленного дня" — матчим по
+    # устойчивому хвостовому фрагменту без чисел/порядка слов).
+    has_mobilized = mobilized_text is not None and (
+        "в группах продленного дня, при посещении таких групп" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -629,7 +664,7 @@ def extract_svo_extended_day_group_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_hobby_clubs_card(seed: dict, page_text: str) -> dict:
+def extract_svo_hobby_clubs_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Бесплатное посещение кружков
     и секций" (77_svo_12), тот же источник cntd.ru/document/1300860766,
     что и 77_svo_6/7/8/9/10/11 — п.1.7 указа (следующий непокрытый пункт
@@ -655,11 +690,15 @@ def extract_svo_hobby_clubs_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.7 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Предоставление детям бесплатного посещения занятий (кружки, секции" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -671,7 +710,7 @@ def extract_svo_hobby_clubs_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_home_social_service_card(seed: dict, page_text: str) -> dict:
+def extract_svo_home_social_service_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Социальное обслуживание на
     дому членов семей участников СВО" (77_svo_14), тот же источник
     cntd.ru/document/1300860766, что и 77_svo_6/7/8/9/10/11/12 — пп.1.8-1.9
@@ -704,11 +743,15 @@ def extract_svo_home_social_service_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.8 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Оказание организациями социального обслуживания, включенными в Реестр поставщиков социальных услуг города Москвы, семье, воспитывающей ребенка-инвалида" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -720,7 +763,7 @@ def extract_svo_home_social_service_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_professional_training_card(seed: dict, page_text: str) -> dict:
+def extract_svo_professional_training_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Организация профессионального
     обучения и дополнительного профессионального образования" (77_svo_17),
     тот же источник cntd.ru/document/1300860766, что и
@@ -749,11 +792,15 @@ def extract_svo_professional_training_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.10 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Организация профессионального обучения и дополнительного профессионального образования супруги и детей трудоспособного возраста" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -765,7 +812,7 @@ def extract_svo_professional_training_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_psychological_help_card(seed: dict, page_text: str) -> dict:
+def extract_svo_psychological_help_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Оказание психологической
     помощи" (77_svo_19), тот же источник cntd.ru/document/1300860766, что и
     77_svo_6/7/8/9/10/11/12/14/17 — п.1.12 указа (следующий непокрытый пункт
@@ -792,11 +839,16 @@ def extract_svo_psychological_help_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.13 — тот же пункт для указа
+    # 8-УМ (п.1.12), другой номер пункта, тот же текст.
+    has_mobilized = mobilized_text is not None and (
+        "Оказание психологической помощи семье" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 1,
@@ -808,7 +860,7 @@ def extract_svo_psychological_help_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_legal_aid_card(seed: dict, page_text: str) -> dict:
+def extract_svo_legal_aid_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Бесплатная юридическая
     помощь" (77_svo_21), тот же источник cntd.ru/document/1300860766, что и
     77_svo_6/7/8/9/10/11/12/14/17/19 — п.1.14 указа (по таблице
@@ -838,11 +890,16 @@ def extract_svo_legal_aid_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.15 — тот же пункт для указа
+    # 8-УМ (п.1.14), другой номер пункта, тот же текст.
+    has_mobilized = mobilized_text is not None and (
+        "Консультирование семьи по юридическим вопросам" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 0,
@@ -854,7 +911,7 @@ def extract_svo_legal_aid_card(seed: dict, page_text: str) -> dict:
     }
 
 
-def extract_svo_career_counseling_card(seed: dict, page_text: str) -> dict:
+def extract_svo_career_counseling_card(seed: dict, page_text: str, mobilized_text: str | None = None) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Карьерное консультирование,
     профориентация" (77_svo_18), тот же источник cntd.ru/document/1300860766,
     что и 77_svo_6/7/8/9/10/11/12/14/17/19/21 — п.1.11 указа (следующий
@@ -886,11 +943,15 @@ def extract_svo_career_counseling_card(seed: dict, page_text: str) -> dict:
 
     has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
     has_volunteer = "доброволь" in page_text
+    # Указ 56-УМ (мобилизованные, B013), п.1.11 — тот же пункт для указа 8-УМ.
+    has_mobilized = mobilized_text is not None and (
+        "Содействие в поиске работы членам семьи" in mobilized_text
+    )
 
     return {
         "measureId": None,
         "region": seed["region"],
-        "categoryMobilized": 0,
+        "categoryMobilized": 1 if has_mobilized else 0,
         "categoryContractor": 1 if has_contractor else 0,
         "categoryVolunteer": 1 if has_volunteer else 0,
         "kidsOfMilitary": 0,
@@ -1269,29 +1330,41 @@ def run_svo_seed(seed: dict) -> dict:
         # существующих extractor'ов найдены дословно в jina-варианте текста,
         # регрессии не должно быть) — см. data/output/ralph_iteration_20260811_162517.md
         page_text = fetch_text(seed["npaUrl"], via_jina=True)
+        # Второй источник (B013) — указ 56-УМ, аналог указа 8-УМ для
+        # мобилизованных (8-УМ не упоминает "мобилизован" ни разу). Фетчится
+        # один раз на всю ветку и передаётся во все 12 экстракторов ниже —
+        # если недоступен (см. историю B005/B007 про сетевую нестабильность
+        # в этой песочнице), categoryMobilized честно остаётся 0, не падаем.
+        mobilized_text = None
+        for _attempt in range(3):
+            try:
+                mobilized_text = fetch_text(SVO_MOBILIZATION_DECREE_URL, via_jina=True)
+                break
+            except Exception:
+                continue
         if seed["measureName"].startswith("Бесплатное питание в школах"):
-            return extract_svo_school_meal_card(seed, page_text)
+            return extract_svo_school_meal_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Зачисление ребёнка в детский сад"):
-            return extract_svo_kindergarten_enrollment_card(seed, page_text)
+            return extract_svo_kindergarten_enrollment_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Освобождение от оплаты за детский сад"):
-            return extract_svo_kindergarten_fee_exemption_card(seed, page_text)
+            return extract_svo_kindergarten_fee_exemption_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Перевод в детский сад или школу"):
-            return extract_svo_kindergarten_transfer_card(seed, page_text)
+            return extract_svo_kindergarten_transfer_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Зачисление в группы продлённого дня"):
-            return extract_svo_extended_day_group_card(seed, page_text)
+            return extract_svo_extended_day_group_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Бесплатное посещение кружков и секций"):
-            return extract_svo_hobby_clubs_card(seed, page_text)
+            return extract_svo_hobby_clubs_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Социальное обслуживание на дому членов семей"):
-            return extract_svo_home_social_service_card(seed, page_text)
+            return extract_svo_home_social_service_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Организация профессионального обучения"):
-            return extract_svo_professional_training_card(seed, page_text)
+            return extract_svo_professional_training_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Оказание психологической помощи"):
-            return extract_svo_psychological_help_card(seed, page_text)
+            return extract_svo_psychological_help_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Бесплатная юридическая помощь"):
-            return extract_svo_legal_aid_card(seed, page_text)
+            return extract_svo_legal_aid_card(seed, page_text, mobilized_text)
         if seed["measureName"].startswith("Карьерное консультирование"):
-            return extract_svo_career_counseling_card(seed, page_text)
-        return extract_svo_college_meal_card(seed, page_text)
+            return extract_svo_career_counseling_card(seed, page_text, mobilized_text)
+        return extract_svo_college_meal_card(seed, page_text, mobilized_text)
     if seed["npaUrl"] == "https://disk.yandex.ru/d/V_LEIMTttBQTeQ":
         # use_proxy=False: в этой (Linux) песочнице `RU_PROXY_URL` не отвечает
         # (таймаут и на TCP, и через curl без ограничения по времени — проверено
