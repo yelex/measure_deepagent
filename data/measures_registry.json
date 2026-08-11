@@ -71,6 +71,11 @@
       "region": "Москва",
       "measureName": "Ежемесячная выплата",
       "npaUrl": "https://disk.yandex.ru/d/V_LEIMTttBQTeQ"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Компенсационная выплата за газификацию",
+      "npaUrl": "https://disk.yandex.ru/d/V_LEIMTttBQTeQ"
     }
   ],
   "инвалиды": [

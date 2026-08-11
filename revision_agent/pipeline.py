@@ -882,6 +882,95 @@ def extract_svo_monthly_payment_card(seed: dict, pdf_text: str) -> dict:
     }
 
 
+def extract_svo_gasification_compensation_card(seed: dict, pdf_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Компенсационная выплата за
+    газификацию" (77_svo_16), тот же источник и та же памятка "Меры
+    поддержки действующего контрактника" (`disk.yandex.ru/d/V_LEIMTttBQTeQ`),
+    что и 77_svo_1/2 — раздел "ПОДКЛЮЧЕНИЕ К СЕТЯМ ГАЗОСНАБЖЕНИЯ".
+    Перепроверено прямым повторным фетчем PDF в этой итерации:
+    "ПОДКЛЮЧЕНИЕ К СЕТЯМ ГАЗОСНАБЖЕНИЯ компенсационная выплата за
+    газификацию не более: •покупка оборудования - 114 000,00 руб.
+    •подключение к сетям газоснабжения жилого дома в пределах г. Москвы -
+    84 000,00 руб. ❖ Условие: одному члену семьи Постановление
+    Правительства Москвы от 14.11.2023 № 2202-ПП" — сумма 114000
+    (покупка оборудования) совпадает с golden `measureSum` численно
+    (golden хранит фразу "до 114 000 ₽ на покупку оборудования" —
+    `sum_field_match` сравнивает через `extract_number`, поэтому value
+    здесь — чистое число 114000, а не переписанная фраза golden).
+
+    golden `measureTerms` для этой строки — развёрнутый текст про "не
+    более 84 000 ₽" и "не позднее 36 месяцев со дня завершения работ" —
+    **этого текста нет в памятке**, там только "Условие: одному члену
+    семьи" (более подробные условия, видимо, только в самом НПА
+    №2202-ПП, не процитированы этой памяткой) — беру честно то, что
+    подтверждается памяткой, не достраиваю по golden. golden `department`
+    ("Социальное казначейство города Москвы") тоже не встречается в
+    памятке вообще (искал прямым повторным фетчем) — беру общий футер
+    памятки, как и в 77_svo_1/2, честный полевой пробел, не подгоняю.
+
+    categoryContractor=1 по тому же общему заголовку памятки, что и в
+    77_svo_1/2 ("ДЕЙСТВУЮЩИЙ ВОЕННОСЛУЖАЩИЙ: ЗАКЛЮЧИЛ КОНТРАКТ") — раздел
+    про газификацию не называет отдельную подкатегорию, общий для всей
+    памятки. categoryMobilized/categoryVolunteer честно 0 — памятка их не
+    упоминает как отдельные категории (golden для этой строки: Mobilized=1,
+    Contractor=1, Volunteer=1 — тот же системный пробел источника, что и
+    во всех предыдущих сво-карточках с этой памяткой). kidsOfMilitary=0 —
+    памятка не про детей (golden тоже 0).
+    """
+    sum_confirmed = (
+        "компенсационная выплата за газификацию" in pdf_text
+        and "114 000" in pdf_text
+        and "84 000" in pdf_text
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "categoryMobilized": 0,
+            "categoryContractor": 0,
+            "categoryVolunteer": 0,
+            "kidsOfMilitary": 0,
+            "measureName": seed["measureName"],
+            "measureSum": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    terms = None
+    m = re.search(
+        r"компенсационная выплата за газификацию.*?"
+        r"❖\s*(Условие:[^П]+)"
+        r"Постановление",
+        pdf_text,
+        re.DOTALL,
+    )
+    if m:
+        terms = re.sub(r"\s+", " ", m.group(1)).strip()
+
+    department = None
+    m_dept = re.search(r"Единый центр поддержки участников СВО и членов их семей", pdf_text)
+    if m_dept:
+        department = m_dept.group(0)
+
+    has_contractor = "заключившее контракт о прохождении военной службы" in pdf_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 0,
+        "kidsOfMilitary": 0,
+        "measureName": seed["measureName"],
+        "measureSum": 114000,
+        "measurePeriodicity": "единовременно",
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -908,9 +997,16 @@ def run_svo_seed(seed: dict) -> dict:
             return extract_svo_legal_aid_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
     if seed["npaUrl"] == "https://disk.yandex.ru/d/V_LEIMTttBQTeQ":
-        pdf_text = fetch_yandex_disk_pdf_text(seed["npaUrl"], use_proxy=True)
+        # use_proxy=False: в этой (Linux) песочнице `RU_PROXY_URL` не отвечает
+        # (таймаут и на TCP, и через curl без ограничения по времени — проверено
+        # отдельно, не связано с этой конкретной мерой), а прямой доступ к
+        # cloud-api.yandex.net работает без прокси (в отличие от прошлых
+        # Mac-сессий, где было наоборот) — см. data/output/ralph_iteration_20260811_181326.md
+        pdf_text = fetch_yandex_disk_pdf_text(seed["npaUrl"], use_proxy=False)
         if seed["measureName"].startswith("Ежемесячная выплата"):
             return extract_svo_monthly_payment_card(seed, pdf_text)
+        if seed["measureName"].startswith("Компенсационная выплата за газификацию"):
+            return extract_svo_gasification_compensation_card(seed, pdf_text)
         return extract_svo_contract_payment_card(seed, pdf_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "

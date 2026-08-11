@@ -180,6 +180,19 @@
       "measurePeriodicity": "ежемесячно",
       "measureTerms": "Условия: • включен руководством военного комиссариата в списочный состав для осуществления выплат • выполняет задачи в ходе СВО",
       "department": "Единый центр поддержки участников СВО и членов их семей"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "categoryMobilized": 0,
+      "categoryContractor": 1,
+      "categoryVolunteer": 0,
+      "kidsOfMilitary": 0,
+      "measureName": "Компенсационная выплата за газификацию",
+      "measureSum": 114000,
+      "measurePeriodicity": "единовременно",
+      "measureTerms": "Условие: одному члену семьи",
+      "department": "Единый центр поддержки участников СВО и членов их семей"
     }
   ],
   "инвалиды": [
