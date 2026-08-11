@@ -3135,6 +3135,131 @@ def extract_disability_pensioner_compensation_card(seed: dict, mos_text: str, am
     }
 
 
+def extract_disability_land_tax_card(seed: dict, law_text: str) -> dict:
+    """Эвристика для меры "Льгота по земельному налогу" (`77_22`), ОДИН
+    источник — golden `Нормативно-правовой акт - NPA` указывает напрямую
+    `docs.cntd.ru/document/3656284?marker=7DA0K6` (Закон г. Москвы от
+    24.11.2004 N 74 "О земельном налоге", ст. 3.1 "Налоговые льготы").
+
+    Этот же документ уже фетчался в B004 (`IMPROVEMENT_BACKLOG.md`,
+    2026-07-31) для ДРУГОЙ категории — "ветераны боевых действий" по
+    земельному налогу (`77_vbd_14/15/16`) — и полнотекстовый поиск тогда
+    не нашёл "ветеран"/"боевых действий" вообще (задача осталась todo).
+    Для категории "инвалиды" документ реально содержит нужный текст:
+    часть 2 ст. 3.1 даёт налоговый вычет 1000000 ₽ (сверх федерального
+    вычета по гл. 31 НК РФ) для перечня категорий, среди которых дословно
+    "физических лиц, которые имеют I и II группу инвалидности" (п.2 —
+    `cause_general_disease`), "ветеранов и инвалидов Великой Отечественной
+    войны, а также ветеранов и инвалидов боевых действий" (п.4 —
+    `cause_war_trauma`) и три радиационные категории — Чернобыль/Маяк/
+    Семипалатинск (п.5-7 — `cause_radiation`). `cause_disabled_child`
+    (ребёнок-инвалид) НЕ заполняется: п.3 списка — "инвалиды с детства"
+    (взрослые, инвалидность с рождения), это другое понятие, чем
+    "ребёнок-инвалид" (см. `skills/measure_extraction/SKILL.md`), и в
+    перечне часть 2 нет отдельного пункта про детей-инвалидов.
+
+    Список НЕ разбивает вычет по группе инвалидности (кроме упоминания
+    "I и II" в самом п.2, но остальные категории группу не называют) —
+    `measure_first/second/third_group` заполняются одинаковым текстом
+    (как в 77_10/77_20, источник не даёт разных сумм по группе).
+    `measure_disabled_child=None` (как и `cause_disabled_child` — эта
+    строка не про детей-инвалидов).
+
+    Часть 3 той же статьи даёт исключение ("не распространяются на
+    земельные участки... сдаваемые в аренду"), дословно совпадающее с
+    golden `measureTerms` — включена в итоговый `measureTerms`.
+
+    `department` (golden: "Территориальные органы налоговой службы") НЕ
+    называется этим текстом закона ни разу (закон устанавливает налог, не
+    администрирование) — честно `None`, не скопировано из эталона, хотя
+    SearXNG-агрегаторы такую формулировку косвенно подтверждают (не
+    первоисточник, не используется). `measurePeriodicity` тоже не
+    подтверждена этим источником → `None` (это поле всё равно вне scoring,
+    см. `LS_SPEC` в `scripts/score_against_golden.py`).
+
+    Источник получен через `mos.ru` (allowlist), НЕ `docs.cntd.ru`: та же
+    статья 3.1 через `docs.cntd.ru/document/3656284/titles/7DA0K6` (via_jina)
+    обрывается client-side lazy-load'ом ровно на границе части 2 (там, где
+    начинается перечень категорий) — известная проблема (см. B003/B004
+    history), не устраняется анкером. Полный текст всех частей ст. 3.1
+    нашёлся в официальном PDF самого закона, опубликованном на mos.ru
+    (`mos.ru/upload/documents/files/9989/...pdf`) — зафетчен через
+    `via_jina` (прямой `urllib` на mos.ru таймаутит в этой сессии, см.
+    B005/B007), извлечён `r.jina.ai`'s встроенным PDF-парсером (не
+    `fetch_yandex_disk_pdf_text`/`pypdf` — тот путь для Яндекс.Диска, не
+    для прямых PDF-ссылок).
+    """
+    block_match = re.search(
+        r"2\. В дополнение к налоговому вычету.*?"
+        r"3\. Налоговые льготы, установленные настоящей статьей",
+        law_text,
+        re.DOTALL,
+    )
+    block = block_match.group(0) if block_match else ""
+
+    sum_match_ = re.search(r"уменьшается на (\d[\d\s]*) рублей", block)
+    has_group_12 = "которые имеют I и II группу инвалидности" in block
+    has_vov_bd = (
+        "ветеранов и инвалидов Великой Отечественной войны" in block
+        and "ветеранов и инвалидов боевых действий" in block
+    )
+    has_radiation = (
+        "воздействию радиации вследствие катастрофы на Чернобыльской АЭС" in block
+        and "Маяк" in block
+    )
+    exclusion_match = re.search(
+        r"Налоговые льготы, установленные настоящей статьей, не "
+        r"распространяются на земельные участки \(части, доли земельных "
+        r"участков\), сдаваемые в аренду\.",
+        law_text,
+    )
+
+    confirmed = bool(sum_match_) and has_group_12 and has_vov_bd and has_radiation
+
+    if not confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "cause_general_disease": 0,
+            "cause_war_trauma": 0,
+            "cause_radiation": 0,
+            "cause_disabled_child": 0,
+            "measureName": seed["measureName"],
+            "measure_first_group": None,
+            "measure_second_group": None,
+            "measure_third_group": None,
+            "measure_disabled_child": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    sum_digits = re.sub(r"\s+", "", sum_match_.group(1))
+    group_value = f"уменьшение налоговой базы на {sum_digits} рублей"
+
+    terms_parts = [f"Налоговая база уменьшается на {sum_digits} рублей."]
+    if exclusion_match:
+        terms_parts.append(exclusion_match.group(0))
+    terms = " ".join(terms_parts)
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "cause_general_disease": 1,
+        "cause_war_trauma": 1,
+        "cause_radiation": 1,
+        "cause_disabled_child": 0,
+        "measureName": seed["measureName"],
+        "measure_first_group": group_value,
+        "measure_second_group": group_value,
+        "measure_third_group": group_value,
+        "measure_disabled_child": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_disability_seed(seed: dict) -> dict:
     """Прогоняет одну инвалиды-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://www.mos.ru/otvet-semya-i-deti/kak-vospolzovatsya-uslugami-molochnoy-kuhni/":
@@ -3199,6 +3324,21 @@ def run_disability_seed(seed: dict) -> dict:
         mos_text = fetch_text(seed["npaUrl"], use_proxy=True)
         dszn_text = fetch_text(seed["amountsUrl"], use_proxy=True)
         return extract_disability_telephone_compensation_card(seed, mos_text, dszn_text)
+    if seed["npaUrl"] == (
+        "https://www.mos.ru/upload/documents/files/9989/"
+        "ZakongMoskviot24112004N74(redot25062025).pdf"
+    ):
+        # via_jina флапает на этом URL (наблюдалось ~50% неудач подряд в
+        # этой сессии) — тот же класс нестабильности, что и в B013 для
+        # указа 56-УМ, тот же обход (3 попытки).
+        law_text = None
+        for _attempt in range(3):
+            try:
+                law_text = fetch_text(seed["npaUrl"], via_jina=True, timeout=30)
+                break
+            except Exception:
+                continue
+        return extract_disability_land_tax_card(seed, law_text or "")
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."

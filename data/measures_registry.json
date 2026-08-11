@@ -235,6 +235,11 @@
       "measureName": "Компенсация на оплату услуг местной телефонной связи ",
       "npaUrl": "https://www.mos.ru/otvet-socialnaya-podderjka/kak-oformit-kompensaciyu-za-stacionarnyy-telefon/",
       "amountsUrl": "https://dszn.ru/news/145"
+    },
+    {
+      "region": "Москва",
+      "measureName": "Льгота по земельному налогу",
+      "npaUrl": "https://www.mos.ru/upload/documents/files/9989/ZakongMoskviot24112004N74(redot25062025).pdf"
     }
   ]
 }
