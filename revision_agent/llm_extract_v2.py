@@ -346,6 +346,13 @@ def extract_measure_via_llm(
 
     for fname in ls_field_names.get(ls, []):
         entry = parsed.get(fname)
+        # GLM иногда возвращает $ref-поля схемы (value/quote) как
+        # JSON-строку вместо нативного вложенного объекта — распарсиваем.
+        if isinstance(entry, str):
+            try:
+                entry = json.loads(entry)
+            except json.JSONDecodeError:
+                entry = None
         if isinstance(entry, dict):
             value = entry.get("value")
             quote = entry.get("quote")
