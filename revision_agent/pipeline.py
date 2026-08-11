@@ -714,6 +714,54 @@ def extract_svo_legal_aid_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_svo_career_counseling_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Карьерное консультирование,
+    профориентация" (77_svo_18), тот же источник cntd.ru/document/1300860766,
+    что и 77_svo_6/7/8/9/10/11/12/14/17/19/21 — п.1.11 указа (следующий
+    непокрытый пункт по таблице сопоставления, сверенной целиком в
+    iteration_20260802_121632; перепроверен прямым повторным фетчем документа
+    в этой итерации через `via_jina=True`, см. ниже — "1.11. Содействие в
+    поиске работы членам семьи." — семантически соответствует golden
+    `measureName`/`measureTerms`, но не дословно: golden описывает шире
+    ("профориентация, карьерное консультирование, поиск работы, подготовка к
+    трудоустройству"), указ короче ("содействие в поиске работы") — та же
+    ситуация юридическая-формулировка-НПА-vs-разговорный-эталон, что и в
+    77_svo_6/7/8/21.
+
+    `kidsOfMilitary` — golden для этой строки = 0 (сверено с эталоном
+    напрямую), как и в 77_svo_21: п.1.11 говорит о "членах семьи" в целом,
+    не называет детей специфически — честно 0, не скопировано по прецеденту
+    "kidsOfMilitary=1", который верен для ДРУГИХ пунктов (детсад/школа/
+    кружки), но не для этого. categoryContractor/categoryVolunteer/
+    categoryMobilized/department — та же логика и то же системное
+    ограничение источника, что во всех предыдущих сво-seed'ах.
+    """
+    terms = None
+    m = re.search(
+        r"(Содействие в поиске работы членам семьи[^.]*\.)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    has_contractor = "заключивших контракт" in page_text or "контракт о прохождении военной службы" in page_text
+    has_volunteer = "доброволь" in page_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 1 if has_volunteer else 0,
+        "kidsOfMilitary": 0,
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def extract_svo_contract_payment_card(seed: dict, pdf_text: str) -> dict:
     """Эвристика для ОДНОЙ конкретной меры — "Выплата при заключении
     контракта" (77_svo_1). ПЕРВЫЙ сво-seed с источником НЕ на
@@ -974,7 +1022,14 @@ def extract_svo_gasification_compensation_card(seed: dict, pdf_text: str) -> dic
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
-        page_text = fetch_text(seed["npaUrl"], use_proxy=True)
+        # via_jina=True: в этой (Linux) песочнице `RU_PROXY_URL` недостижим
+        # (curl -x на docs.cntd.ru и на www.mos.ru оба зависают дольше
+        # timeout 15, воспроизведено отдельно от кода задачи — см.
+        # IMPROVEMENT_BACKLOG.md B007), а r.jina.ai отвечает и отдаёт
+        # содержимое документа (проверено: все нужные фразы для 10
+        # существующих extractor'ов найдены дословно в jina-варианте текста,
+        # регрессии не должно быть) — см. data/output/ralph_iteration_20260811_162517.md
+        page_text = fetch_text(seed["npaUrl"], via_jina=True)
         if seed["measureName"].startswith("Бесплатное питание в школах"):
             return extract_svo_school_meal_card(seed, page_text)
         if seed["measureName"].startswith("Зачисление ребёнка в детский сад"):
@@ -995,6 +1050,8 @@ def run_svo_seed(seed: dict) -> dict:
             return extract_svo_psychological_help_card(seed, page_text)
         if seed["measureName"].startswith("Бесплатная юридическая помощь"):
             return extract_svo_legal_aid_card(seed, page_text)
+        if seed["measureName"].startswith("Карьерное консультирование"):
+            return extract_svo_career_counseling_card(seed, page_text)
         return extract_svo_college_meal_card(seed, page_text)
     if seed["npaUrl"] == "https://disk.yandex.ru/d/V_LEIMTttBQTeQ":
         # use_proxy=False: в этой (Linux) песочнице `RU_PROXY_URL` не отвечает
