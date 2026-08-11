@@ -80,4 +80,24 @@ revision_agent/
   Раньше (attempt B008, до reset) — все 5 полей были null.
 - Score-eval не запускался (нет batch LLM export, это L002).
 - Побочная находка: L006 (boolean-коэрсия ломает categoryOfVeteran).
+
+### [2026-08-11] L002 LLM pipeline интеграция + первый batch-прогон
+- Добавлен --llm-mode в run_pipeline_demo.py: fetch через
+  agent.pipeline_mode.fetch_source, экстракция через
+  revision_agent.llm_extract_v2.extract_measure_via_llm (L001-фикс),
+  экспорт через существующий write_agent_export.
+- Первый полный batch-прогон по всем 43 seed'ам реестра (вбд=6, сво=16,
+  инвалиды=21) + score_against_golden.py.
+- Результат: Recall=0.860 Precision=1.000 AvgQS=0.248 PerfectRate=0.000.
+  Recall совпал числом с regex-эрой (0.86) — ожидаемо, seed-реестр тот
+  же самый (LLM читает те же URL). AvgQS ниже, чем в regex-эре (была
+  0.61) — генерик-промпт без тюнинга под конкретные поля хуже, чем
+  hand-crafted regex. Все 7 miss_agent — ошибки *загрузки* источника
+  (mos.ru ГОСТ-TLS), не экстракции.
+- Замечено: почти все "category"-поля (вбд, сво, инвалиды) дают ошибку
+  в scorer почти в 100% случаев — нужен разбор field_errors в L003,
+  вероятно частично объясняется L006 (boolean-коэрсия ломает текстовые
+  category-поля).
+- Следующий шаг: L003 (сравнение field_errors LLM vs regex, тюнинг
+  промпта, разбор category-полей).
 ```

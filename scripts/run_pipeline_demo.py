@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Прогоняет seed-реестр `data/measures_registry.json` через
-`revision_agent.pipeline` и пишет `data/output/agent_cards_export.json`
-в формате, который читает `scripts/score_against_golden.py`.
+`revision_agent.pipeline` (regex, устарело) или через LLM-экстрактор
+(`--llm-mode`, см. `revision_agent/llm_extract_v2.py`) и пишет
+`data/output/agent_cards_export.json` в формате, который читает
+`scripts/score_against_golden.py`.
 
-Это демонстрационный/итерационный раннер под текущий очень узкий
-pipeline (одна мера, один источник, см. revision_agent/pipeline.py) —
-не финальный CLI агента (тот появится вместе с полноценным B001 на
-deepagents/LLM)."""
+Это демонстрационный/итерационный раннер, не финальный CLI агента."""
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -28,7 +28,7 @@ RUNNERS = {
 }
 
 
-def main():
+def run_regex_mode():
     registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
     cards_by_ls = {"вбд": [], "сво": [], "инвалиды": []}
 
@@ -40,6 +40,67 @@ def main():
 
     write_agent_export(cards_by_ls, EXPORT_PATH)
     print(f"Экспорт записан в {EXPORT_PATH}")
+
+
+def run_llm_mode():
+    """LLM-эра: fetch (agent.pipeline_mode.fetch_source) + generic
+    LLM-экстрактор (llm_extract_v2.extract_measure_via_llm, L001-фикс)."""
+    from agent.pipeline_mode import fetch_source
+    from revision_agent.llm_extract_v2 import extract_measure_via_llm
+
+    registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    cards_by_ls = {"вбд": [], "сво": [], "инвалиды": []}
+
+    for ls, seeds in registry.items():
+        for seed in seeds:
+            name = seed["measureName"]
+            url = seed.get("npaUrl", "")
+            region = seed.get("region", "Москва")
+            print(f"[{ls}] {name!r} <- {url}", flush=True)
+
+            if not url:
+                print("    SKIP: нет URL источника", flush=True)
+                cards_by_ls[ls].append({"measureId": None, "region": region, "measureName": name})
+                continue
+
+            texts = {}
+            try:
+                texts["источник_1"] = fetch_source(url)[:12000]
+            except Exception as e:
+                print(f"    ОШИБКА загрузки: {e}", flush=True)
+                cards_by_ls[ls].append({"measureId": None, "region": region, "measureName": name})
+                continue
+
+            if seed.get("amountsUrl"):
+                try:
+                    texts["источник_2_суммы"] = fetch_source(seed["amountsUrl"])[:8000]
+                except Exception as e:
+                    print(f"    Второй источник не загружен: {e}", flush=True)
+
+            try:
+                card = extract_measure_via_llm(seed, texts, ls, provider="glm")
+            except Exception as e:
+                print(f"    ОШИБКА LLM: {e}", flush=True)
+                card = {"measureId": None, "region": region, "measureName": name}
+
+            filled = sum(1 for k, v in card.items() if v is not None and k not in ("measureId", "region", "measureName"))
+            total = len(card) - 3
+            print(f"    {filled}/{total} полей заполнено", flush=True)
+            cards_by_ls[ls].append(card)
+
+    write_agent_export(cards_by_ls, EXPORT_PATH)
+    print(f"Экспорт записан в {EXPORT_PATH}")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--llm-mode", action="store_true", help="Использовать LLM-экстрактор вместо regex")
+    args = parser.parse_args()
+
+    if args.llm_mode:
+        run_llm_mode()
+    else:
+        run_regex_mode()
 
 
 if __name__ == "__main__":

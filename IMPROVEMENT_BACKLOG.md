@@ -28,16 +28,22 @@ generic, масштабируемый, не привязанный к струк
 
 ## [L002] LLM-экстрактор: интеграция в pipeline + batch прогон
 
-- Статус: todo
+- Статус: done
 - Приоритет: high
 - Источник: L001 (зависим от него). Даже если grounding пофикшен, LLM-экстрактор не подключён к `scripts/run_pipeline_demo.py` и `export_cards.py`.
-- Гипотеза: после интеграции LLM-экстрактор заменит все 25 regex-функций одним generic вызовом.
-- Действие:
-  1. В `run_pipeline_demo.py` добавить путь через `extract_measure_via_llm` вместо `run_*_seed`.
-  2. В `export_cards.py` экспортировать карточки из LLM-прогона.
-  3. Batch-прогон по всем seed'ам из `measures_registry.json`.
-  4. Прогон `score_against_golden.py` на LLM-карточках.
-- Критерий успеха: LLM даёт Recall > 0 и измеримые метрики AvgQS/PerfectRate.
+- Действие: добавлен флаг `--llm-mode` в `run_pipeline_demo.py` (функция `run_llm_mode`), использует `agent.pipeline_mode.fetch_source` для загрузки текста и `revision_agent.llm_extract_v2.extract_measure_via_llm` (L001-фикс) для экстракции; экспорт через существующий `write_agent_export`. Batch-прогон по всем 43 seed'ам реестра выполнен.
+- Результат (`score_against_golden.py`, note="L002: LLM batch первый прогон"):
+  Recall=0.860 Precision=1.000 AvgQS=0.248 PerfectRate=0.000 (43 карточки).
+  По ЖС: вбд Recall=0.500 AvgQS=0.311; сво Recall=1.000 AvgQS=0.263;
+  инвалиды Recall=0.955 AvgQS=0.219. 7 miss_agent — все из-за
+  `ОШИБКА загрузки` (в основном mos.ru — известная TLS/ГОСТ-проблема,
+  см. `pipeline.py` docstring), не из-за LLM-экстракции как таковой.
+- Критерий успеха выполнен: Recall > 0, метрики AvgQS/PerfectRate измеримы.
+  AvgQS низкий (0.248) — ожидаемо для первого прогона без тюнинга
+  промпта, см. L003 (сравнение с regex + тюнинг). Много полей с полем
+  "category" помечены как ошибка почти на 100% случаев — вероятно
+  пересекается с L006 (boolean-коэрсия текстовых category-полей) плюс
+  требует отдельного анализа field_errors в L003.
 
 ## [L003] LLM-экстрактор: сравнение с regex и тюнинг промпта
 

@@ -1,1 +1,469 @@
-[]
+{
+  "вбд": [
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатный проезд на аэроэкспрессе",
+      "categoryOfVeteran": 1,
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": "Для проезда необходимо оформить безденежный проездной документ",
+      "department": "Аэроэкспресс"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
+      "categoryOfVeteran": null,
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": null,
+      "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
+      "categoryOfVeteran": null,
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": "Место жительства в городе Москве; заявительная основа",
+      "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
+      "categoryOfVeteran": null,
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": null,
+      "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатное изготовление и ремонт зубных протезов",
+      "categoryOfVeteran": null,
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": null,
+      "department": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсационная выплата за газификацию",
+      "categoryOfVeteran": null,
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": null,
+      "department": null
+    }
+  ],
+  "сво": [
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатное питание в колледжах",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": "студентам, обучающимся по очной форме обучения по образовательным программам среднего профессионального образования в государственных образовательных организациях, подведомственных органам исполнительной власти города Москвы",
+      "department": "Департамент образования и науки города Москвы",
+      "measurePeriodicity": "одноразовое горячее питание (обед) — ежедневно в учебные дни"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатное питание в школах",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": null,
+      "kidsOfMilitary": null,
+      "measureSum": null,
+      "measureTerms": null,
+      "department": "органы исполнительной власти города Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Зачисление ребёнка в детский сад",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": "во внеочередном порядке, детей по достижении ими возраста полутора лет",
+      "department": "Департамент образования и науки города Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Освобождение от оплаты за детский сад",
+      "categoryMobilized": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": "Освобождение от платы, взимаемой за присмотр и уход за ребенком в государственных образовательных организациях, предоставляющих дошкольное образование и подведомственных органам исполнительной власти города Москвы, муниципальных образовательных организациях, предоставляющих дошкольное образование в городе Москве",
+      "department": "Департамент образования и науки города Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Перевод в детский сад или школу рядом с домом",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": null,
+      "department": "Департамент образования и науки города Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Зачисление в группы продлённого дня и освобождение от их оплаты",
+      "categoryMobilized": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": "Зачисление в первоочередном порядке детей 1-6 классов в группы продленного дня, обучающихся в государственных образовательных организациях, подведомственных органам исполнительной власти города Москвы, муниципальных образовательных организациях, осуществляющих образовательную деятельность в городе Москве, и освобождение от платы, взимаемой за присмотр и уход за указанными детьми в группах продленного дня, при посещении таких групп",
+      "department": "Департамент образования и науки города Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатное посещение кружков и секций",
+      "categoryMobilized": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": "бесплатное посещение занятий (кружки, секции и иные подобные занятия) по дополнительным общеобразовательным программам в государственных организациях, подведомственных органам исполнительной власти города Москвы, муниципальных образовательных организациях, осуществляющих образовательную деятельность по дополнительным общеобразовательным программам в городе Москве",
+      "department": "органы исполнительной власти города Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Социальное обслуживание на дому членов семей участников СВО",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": "признанных в установленном порядке нуждающимися в социальном обслуживании независимо от состава семьи и без учета уровня доходов семьи",
+      "department": "Департамент труда и социальной защиты населения города Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Организация профессионального обучения и дополнительного профессионального образования",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": "Организация профессионального обучения и дополнительного профессионального образования супруги и детей трудоспособного возраста",
+      "department": null,
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Оказание психологической помощи",
+      "categoryMobilized": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 0,
+      "measureSum": null,
+      "measureTerms": "Предоставляется семьям военнослужащих, заключивших контракт о прохождении военной службы с Минобороны РФ и выполняющих задачи в ходе СВО, а также семьям граждан, пребывающих в добровольческих формированиях. Распространяется также на семьи погибших (умерших), ставших инвалидами вследствие военной травмы (п. 1(3)).",
+      "department": null,
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатная юридическая помощь",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": null,
+      "measureSum": null,
+      "measureTerms": "Консультирование семьи по юридическим вопросам. Предоставляется семьям военнослужащих-контрактников и добровольцев, выполняющих задачи в ходе СВО, отобранных Военным комиссариатом города Москвы.",
+      "department": null,
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Карьерное консультирование, профориентация",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": null,
+      "kidsOfMilitary": 1,
+      "measureSum": null,
+      "measureTerms": "Содействие в поиске работы членам семьи",
+      "department": null,
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Выплата при заключении контракта",
+      "categoryMobilized": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": null,
+      "kidsOfMilitary": null,
+      "measureSum": null,
+      "measureTerms": null,
+      "department": null,
+      "measurePeriodicity": "Единовременная"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Ежемесячная выплата",
+      "categoryMobilized": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": null,
+      "kidsOfMilitary": null,
+      "measureSum": "50000",
+      "measureTerms": "включен руководством военного комиссариата в списочный состав для осуществления выплат; выполняет задачи в ходе СВО; прекращается после увольнения со службы",
+      "department": "Мэр Москвы",
+      "measurePeriodicity": "ежемесячная"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсационная выплата за газификацию",
+      "categoryMobilized": null,
+      "categoryContractor": null,
+      "categoryVolunteer": null,
+      "kidsOfMilitary": null,
+      "measureSum": null,
+      "measureTerms": null,
+      "department": null,
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Выплата в случае ранения",
+      "categoryMobilized": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": null,
+      "kidsOfMilitary": 0,
+      "measureSum": null,
+      "measureTerms": "Получение увечья (ранения, травмы, контузии) при выполнении задач в ходе СВО. Для региональных выплат (Москва) — отбор ВК г. Москвы или контракт из Москвы. Ранение после 12.11.2024 для федеральных выплат лёгкой/неперечневой категории.",
+      "department": null,
+      "measurePeriodicity": "Единовременная"
+    }
+  ],
+  "инвалиды": [
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация лицу, занятому уходом за ребёнком-инвалидом или инвалидом с детства в возрасте до 23 лет",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": 1,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": "17790",
+      "measureTerms": "Назначается лицу, занятому уходом за ребенком-инвалидом или инвалидом с детства в возрасте до 23 лет. Порядок и условия предоставления, в том числе с применением критериев нуждаемости, устанавливаются Правительством Москвы.",
+      "department": "Правительство Москвы",
+      "measurePeriodicity": "Ежемесячно"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация детям-инвалидам либо инвалидам с детства до 23 лет, потерявшим кормильца"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация на ребёнка неработающих родителей — инвалидов I или II группы"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация в связи с ростом стоимости жизни отдельным категориям семей с детьми",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": "892",
+      "measure_second_group": "892",
+      "measure_third_group": "892",
+      "measure_disabled_child": null,
+      "measureTerms": "на детей в возрасте до 1,5 лет, родители которых являются инвалидами и (или) пенсионерами",
+      "department": "Правительство Москвы",
+      "measurePeriodicity": "ежемесячная"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация на возмещение роста стоимости продуктов питания отдельным категориям граждан",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": "на детей до 3 лет отдельным категориям граждан",
+      "department": "Правительство Москвы",
+      "measurePeriodicity": "Ежемесячно"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация усыновившим ребёнка-инвалида",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
+      "department": "Правительство Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Выплата опекунам, попечителям, приёмным родителям, патронатным воспитателям на содержание детей-инвалидов"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Вознаграждение приёмному родителю, патронатному воспитателю"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Предоставление бесплатного питания"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатный проезд в наземном транспорте, метрополитене, МЦК, МЦД, а также на железнодорожном транспорте в пределах Москвы и области",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": 1,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": "Граждане с инвалидностью, зарегистрированные в Москве",
+      "department": "Московский транспорт",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация гражданам, имеющим заслуги в области физической культуры и спорта",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
+      "department": null,
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Выплата к пенсии инвалидам-ветеранам боевых действий в Афганистане или на Северном Кавказе",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
+      "department": "Правительство Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Региональная компенсация страховой премии по договору ОСАГО"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Сертификат на отдых и оздоровление на ребёнка-инвалида и сопровождающее лицо"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Региональная компенсация инвалидам на технические средства реабилитации"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатное изготовление и ремонт зубных протезов",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
+      "department": "ГАУЗ «СП №53 ДЗМ» Департамента здравоохранения города Москвы",
+      "measurePeriodicity": null
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Социальное такси"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Социальное обслуживание на дому и в стационарной форме"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация отдельным категориям работающих пенсионеров"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация на оплату услуг местной телефонной связи "
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Льгота по земельному налогу"
+    }
+  ]
+}
