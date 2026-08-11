@@ -1395,6 +1395,39 @@ Ralph loop — см. `RALPH_PROMPT.md`, п.0). Пополняется по фа�
   77_vbd_14/15/16 (земельный налог, тот же платный барьер, что и 77_22
   инвалиды). Полный разбор: `data/output/ralph_iteration_20260811_170058.md`.
 
+### [2026-08-11 21:49] iteration_20260811_214916 — B008 (шаг 1, попытка 1), reverted
+
+- Гипотеза: заменить regex-экстрактор `extract_vbd_aeroexpress_card`
+  (77_vbd_4, единственная заполняемая regex'ом полей — `department`, и
+  та не проходит `text_field_match`) на `llm_extract_v2.extract_measure_via_llm`
+  — проверить, закроет ли LLM v2 пустые `categoryOfVeteran`/`measureSum`/
+  `measurePeriodicity`/`measureTerms`, которые regex никогда не пытался
+  заполнить
+- Изменение: `revision_agent/pipeline.py` — `.env`-loading (нужен
+  `GLM_API_KEY`, раньше читался только в `agent/*`) + переключение
+  aeroexpress-ветки `run_vbd_seed` на `llm_extract_v2`
+- Метрики до: Recall=0.840 (42/50), Precision=1.000, Average QS=0.538,
+  Perfect Rate=0.024; вбд AvgQS=0.531 (scored=6)
+- Метрики после: Recall=0.840, Precision=1.000, Average QS=0.538,
+  Perfect Rate=0.024; вбд AvgQS=0.531 (scored=6) — **идентично**
+- Вердикт: reverted — карточка 77_vbd_4 вернулась ПОЛНОСТЬЮ пустой (все
+  5 полей `null`), grounding (`_quote_grounded`) отклонил все
+  value/quote модели, хотя сам LLM-вызов прошёл без ошибки. Метрика не
+  изменилась только потому, что старое regex-значение `department`
+  тоже не проходило `text_field_match` (предсказано заранее ручным
+  анализом golden-словоформы против текста источника — см. трейс) — не
+  улучшение, а нейтральный результат с потерей информации (был
+  неидеальный ответ, стал пустой). `git checkout` на `pipeline.py` и
+  `agent_cards_export.json`
+- Примечание: сразу после прогона GLM квота исчерпалась (`HTTP 429`,
+  сброс ~2026-08-12 05:02 UTC) — не удалось перепроверить сырой ответ
+  модели ДО grounding-фильтрации (не залогирован — упущение этой
+  итерации, на будущее логировать `raw`/`parsed` до `_quote_grounded`).
+  Полный разбор с детальным анализом golden-словоформы (почему
+  `department` этой карточки в принципе не может пройти matching ни у
+  regex, ни у grounded-LLM) — `data/output/ralph_iteration_20260811_214916.md`,
+  история и рекомендация для следующей попытки — `IMPROVEMENT_BACKLOG.md` B008.
+
 <!-- Дальнейшие записи добавляются сюда по мере прогонов. -->
 
 ## Baseline метрик
