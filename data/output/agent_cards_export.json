@@ -49,6 +49,16 @@
       "measurePeriodicity": null,
       "measureTerms": "бесплатное изготовление и ремонт зубных протезов (кроме расходов на оплату стоимости драгоценных металлов и металлокерамики).",
       "department": null
+    },
+    {
+      "measureId": "77_vbd_1",
+      "region": "Москва",
+      "categoryOfVeteran": "Военнослужащие",
+      "measureName": "Компенсационная выплата за газификацию",
+      "measureSum": 114000,
+      "measurePeriodicity": "единовременно",
+      "measureTerms": null,
+      "department": null
     }
   ],
   "сво": [

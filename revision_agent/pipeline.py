@@ -273,11 +273,71 @@ def extract_vbd_dental_prosthetics_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_vbd_gasification_compensation_card(seed: dict, pdf_text: str) -> dict:
+    """Эвристика для льготы "Компенсационная выплата за газификацию"
+    (77_vbd_1, категория Военнослужащие) — ТА ЖЕ памятка "Меры поддержки
+    действующего контрактника" (`disk.yandex.ru/d/V_LEIMTttBQTeQ`), что
+    уже используется для сво-карточек 77_svo_1/2/16, раздел "ПОДКЛЮЧЕНИЕ
+    К СЕТЯМ ГАЗОСНАБЖЕНИЯ" — идентичный текст, что и в
+    `extract_svo_gasification_compensation_card`. Проверено прямым
+    повторным фетчем в этой итерации: "компенсационная выплата за
+    газификацию не более: •покупка оборудования - 114 000,00 руб.
+    •подключение к сетям газоснабжения жилого дома в пределах г. Москвы
+    - 84 000,00 руб. ❖ Условие: одному члену семьи Постановление
+    Правительства Москвы от 14.11.2023 № 2202-ПП" — сумма 114000
+    совпадает с golden `MeasureSum` численно (`extract_number`,
+    golden хранит фразу "до 114 000 ₽ на покупку оборудования").
+
+    golden `measureTerms` (про "не более 84 000 ₽" и "не позднее 36
+    месяцев со дня завершения работ") и golden `department` ("Социальное
+    казначейство города Москвы") этой памяткой не подтверждаются (тот же
+    честный пробел источника, что и в 77_svo_16 — подробнее в НПА
+    №2202-ПП, не процитировано памяткой, не подгоняю). `categoryOfVeteran`
+    — из identity seed'а, не из текста (памятка не разбивает раздел про
+    газификацию по категориям получателя) — тот же принцип, что и в
+    `extract_vbd_public_transport_card`/`extract_vbd_dental_prosthetics_card`.
+    """
+    sum_confirmed = (
+        "компенсационная выплата за газификацию" in pdf_text
+        and "114 000" in pdf_text
+        and "84 000" in pdf_text
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": seed.get("measureId"),
+            "region": seed["region"],
+            "categoryOfVeteran": seed.get("categoryOfVeteran"),
+            "measureName": seed["measureName"],
+            "measureSum": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    return {
+        "measureId": seed.get("measureId"),
+        "region": seed["region"],
+        "categoryOfVeteran": seed.get("categoryOfVeteran"),
+        "measureName": seed["measureName"],
+        "measureSum": 114000,
+        "measurePeriodicity": "единовременно",
+        "measureTerms": None,
+        "department": None,
+    }
+
+
 def run_vbd_seed(seed: dict) -> dict:
     """Прогоняет одну вбд-мера из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://aeroexpress.ru/aero/info/benefits.html":
         page_text = fetch_text(seed["npaUrl"])
         return extract_vbd_aeroexpress_card(seed, page_text)
+    if seed["npaUrl"] == "https://disk.yandex.ru/d/V_LEIMTttBQTeQ":
+        # Тот же Яндекс.Диск-хаб, что и сво-карточки 77_svo_1/2/16 (см.
+        # run_svo_seed) — use_proxy=False по той же сетевой причине (см.
+        # data/output/ralph_iteration_20260811_181326.md).
+        pdf_text = fetch_yandex_disk_pdf_text(seed["npaUrl"], use_proxy=False)
+        return extract_vbd_gasification_compensation_card(seed, pdf_text)
     if seed["npaUrl"] == "https://docs.cntd.ru/document/3656309":
         # via_jina=True + путь /titles/<anchor>: `RU_PROXY_URL` недостижим для
         # cntd.ru в этой сессии (см. B007), а `?marker=...&section=text` через
