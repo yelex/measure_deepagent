@@ -4,6 +4,34 @@
       "region": "Москва",
       "measureName": "Бесплатный проезд на аэроэкспрессе",
       "npaUrl": "https://aeroexpress.ru/aero/info/benefits.html"
+    },
+    {
+      "measureId": "77_vbd_3",
+      "region": "Москва",
+      "categoryOfVeteran": "Военнослужащие",
+      "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
+      "npaUrl": "https://docs.cntd.ru/document/3656309"
+    },
+    {
+      "measureId": "77_vbd_9",
+      "region": "Москва",
+      "categoryOfVeteran": "Обслуживающие воинские части",
+      "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
+      "npaUrl": "https://docs.cntd.ru/document/3656309"
+    },
+    {
+      "measureId": "77_vbd_10",
+      "region": "Москва",
+      "categoryOfVeteran": "Работники в зоне боевых действий",
+      "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
+      "npaUrl": "https://docs.cntd.ru/document/3656309"
+    },
+    {
+      "measureId": "77_vbd_5",
+      "region": "Москва",
+      "categoryOfVeteran": "Военнослужащие",
+      "measureName": "Бесплатное изготовление и ремонт зубных протезов",
+      "npaUrl": "https://docs.cntd.ru/document/3656309"
     }
   ],
   "сво": [

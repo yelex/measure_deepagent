@@ -205,11 +205,91 @@ def extract_vbd_aeroexpress_card(seed: dict, page_text: str) -> dict:
     }
 
 
+def extract_vbd_public_transport_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для льготы "Бесплатный проезд на всех видах городского
+    пассажирского транспорта" (77_vbd_3/9/10 — по одной карточке на
+    категорию Военнослужащие/Обслуживающие воинские части/Работники в
+    зоне боевых действий), источник — статья 8 Закона города Москвы от
+    03.11.2004 N 70 "О мерах социальной поддержки отдельных категорий
+    жителей города Москвы" (`docs.cntd.ru/document/3656309`, якорь
+    7DK0K9 = статья 8).
+
+    measureTerms извлекается дословно (п.1 подпункт 1). categoryOfVeteran
+    статья 8 текстом НЕ называет (пишет обобщённо "гражданам, относящимся
+    к категориям, указанным в частях 2 и 3 статьи 3... и являющимся
+    пенсионерами") — в отличие от `extract_vbd_aeroexpress_card` (где
+    ОДНА карточка декларативно покрывает все 4 федеральные категории
+    сразу и поэтому не может быть честно отнесена ни к одной), здесь
+    три ОТДЕЛЬНЫХ seed'а, каждый заведомо нацелен на конкретную
+    golden-строку (тот же принцип, что и region/measureName, копируемые
+    из seed без "извлечения" из текста во всех существующих
+    экстракторах) — см. полное рассуждение в
+    `data/output/ralph_iteration_20260811_165526.md`. department/sum/
+    periodicity статья 8 не называет (МФЦ — из другого раздела закона,
+    не статьи 8, не проверено в этой итерации) — честно `None`.
+    """
+    terms = None
+    m = re.search(
+        r"(право на бесплатный проезд[^;]+;)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip().rstrip(";").strip()
+
+    return {
+        "measureId": seed.get("measureId"),
+        "region": seed["region"],
+        "categoryOfVeteran": seed.get("categoryOfVeteran"),
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
+def extract_vbd_dental_prosthetics_card(seed: dict, page_text: str) -> dict:
+    """Эвристика для льготы "Бесплатное изготовление и ремонт зубных
+    протезов" (77_vbd_5, категория Военнослужащие), тот же источник и
+    та же статья 8 (п.1 подпункт 2), что и `extract_vbd_public_transport_card`
+    — см. docstring там же про categoryOfVeteran/department."""
+    terms = None
+    m = re.search(
+        r"(бесплатное изготовление и ремонт зубных протезов[^.]+\.)",
+        page_text,
+    )
+    if m:
+        terms = m.group(1).strip()
+
+    return {
+        "measureId": seed.get("measureId"),
+        "region": seed["region"],
+        "categoryOfVeteran": seed.get("categoryOfVeteran"),
+        "measureName": seed["measureName"],
+        "measureSum": None,
+        "measurePeriodicity": None,
+        "measureTerms": terms,
+        "department": None,
+    }
+
+
 def run_vbd_seed(seed: dict) -> dict:
     """Прогоняет одну вбд-мера из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://aeroexpress.ru/aero/info/benefits.html":
         page_text = fetch_text(seed["npaUrl"])
         return extract_vbd_aeroexpress_card(seed, page_text)
+    if seed["npaUrl"] == "https://docs.cntd.ru/document/3656309":
+        # via_jina=True + путь /titles/<anchor>: `RU_PROXY_URL` недостижим для
+        # cntd.ru в этой сессии (см. B007), а `?marker=...&section=text` через
+        # jina отдаёт обрезанную (~11 КБ, client-side lazy-load) версию —
+        # `/titles/7DK0K9` отдаёт именно статью 8 целиком, без обрезания
+        # (проверено вручную перед этой правкой, см. трейс-файл итерации).
+        page_text = fetch_text(
+            "https://docs.cntd.ru/document/3656309/titles/7DK0K9", via_jina=True
+        )
+        if seed["measureName"].startswith("Бесплатное изготовление и ремонт зубных протезов"):
+            return extract_vbd_dental_prosthetics_card(seed, page_text)
+        return extract_vbd_public_transport_card(seed, page_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
