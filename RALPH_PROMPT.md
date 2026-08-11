@@ -71,9 +71,9 @@
 ## 4. Прогони eval
 
 ```bash
-pyenv exec python3 scripts/score_against_golden.py --agent-export data/output/agent_cards_export.json --note "<backlog-id>: до изменения"
+python3 scripts/score_against_golden.py --agent-export data/output/agent_cards_export.json --note "<backlog-id>: до изменения"
 # ... вносишь изменение ...
-pyenv exec python3 scripts/score_against_golden.py --agent-export data/output/agent_cards_export.json --note "<backlog-id>: после изменения"
+python3 scripts/score_against_golden.py --agent-export data/output/agent_cards_export.json --note "<backlog-id>: после изменения"
 ```
 
 **Не используй голый `python3` или `.venv/bin/python`** — на этой машине
