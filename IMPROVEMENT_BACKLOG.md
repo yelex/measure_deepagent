@@ -1444,3 +1444,50 @@ loop. Обновляется только агентом (в рамках ите
      После того как B001-B003 закрыты и появляются реальные Match-карточки,
      следующий раунд задач должен браться из field_errors в tuning_log.jsonl
      (какое поле/ЖС чаще всего 0), а не выдумываться заново. -->
+
+---
+
+## [B008] LLM-экстрактор v2: structured output + reasoning + grounding fix
+- Статус: todo
+- Приоритет: high
+- Источник: ручное наблюдение (сессия 2026-08-11). Текущие 25 regex-экстракторов не масштабируются, quality stuck на AvgQS=0.54. Создан `llm_extract_v2.py` (structured output через tool_call + reasoning-поля + grounding fix), но нужен end-to-end тест и интеграция в pipeline.
+- Гипотеза: замена regex на LLM-извлечение улучшит AvgQS (terms/department/systematically null из-за жёсткости regex) и обобщит на новые источники без ручного написания экстрактора.
+- Что сделано (в working tree, не закоммичено):
+  - `revision_agent/llm_extract_v2.py` — новый экстрактор: Pydantic-схема с `reasoning_scene_graph`/`reasoning_schema_mapping` (по аналогии с auto/structured_llm.py), forced tool_call, grounding check против очищенного текста
+  - `agent/main_agent.py` — deepagents harness: create_deep_agent с GLM-5, subagents (search + verification), tools, skills, interrupt_on
+  - `agent/pipeline_mode.py` — pipeline-режим для batch-прогона (fetch → LLM extract, без agent loop)
+  - `agent/tools/__init__.py` — 5 инструментов для deepagents
+  - `skills/` — 3 скила (measure_extraction, trusted_sources, citation_verification)
+  - Очистка boilerplate (URL/мусор cntd.ru/jina) + smart chunking
+- Что нужно сделать в итерациях:
+  1. End-to-end тест v2 на одной мере (GLM-5 + structured output). Сравнить с regex.
+  2. Интегрировать v2 в `scripts/run_pipeline_demo.py` и `export_cards.py`.
+  3. Batch-прогон по всем мерам через v2, сравнить метрики с regex-baseline (Recall 0.84, AvgQS 0.54).
+  4. Если v2 лучше на AvgQS — заменить regex в pipeline.py на v2. Если хуже — тюнить промпт.
+- История: тест на glm-4.7-flash (52s, 3/8 полей) — слабая модель. Тест на glm-5 со старым промптом (38s, 4/8) — categoryContractor null из-за бага grounding. Тест с фиксом chunking (4/8, категории найдены). Raw JSON показал что GLM извлекает 7/8 правильно, но _quote_confirmed убивал половину. V2 (structured output) — прерван до завершения.
+
+## [B009] Grounding fix: _quote_confirmed проверял против сырого текста
+- Статус: done
+- Приоритет: high
+- Источник: обнаружено при отладке B008. GLM-5 возвращал корректные цитаты, но `_quote_confirmed` проверял их против сырого текста (с URL-мусором), а модель видела очищенный → цитаты не находились → поля обнулялись.
+- Фикс: в `llm_extract.py` и `llm_extract_v2.py` проверка теперь против очищенного текста. Эффект: +2-3 поля на карточку.
+
+## [B010] deepagents harness: полная архитектура из AGENTS.md
+- Статус: todo
+- Приоритет: medium
+- Источник: AGENTS.md описывает целевую архитектуру, но agent loop зависает на glm-5 >3мин из-за множественных LLM-вызовов.
+- Что нужно сделать:
+  1. Профилировать agent loop — какой шаг самый медленный?
+  2. Возможно использовать glm-4.7-flash для agent loop и glm-5 для extraction.
+  3. Добавить timeout на agent loop.
+
+## [B011] Очистка текста: strip cntd.ru/jina boilerplate перед LLM
+- Статус: done
+- Приоритет: medium
+- Источник: jina возвращает ~1500 символов мусора перед текстом НПА.
+- Фикс: `_strip_boilerplate()` + `_cut_to_relevant()`. Эффект: категории получателей стали извлекаться.
+
+## [B012] Адаптация RALPH_PROMPT.md для Linux-сервера
+- Статус: done
+- Приоритет: low
+- Фикс: `pyenv exec python3` → `python3`, pypdf установлен, git identity настроена, trust dialog принят.
