@@ -13,16 +13,30 @@
 на этой машине другим процессом):
 
     cd infra/searxng && docker compose up -d
+
+Порт был захардкожен без возможности переопределения — минимум три
+итерации (77_11, 77_12, 77_19, см. `IMPROVEMENT_BACKLOG.md` B004/B003)
+констатировали "SearXNG недоступен, docker daemon не поднят" на основании
+одной проверки этого порта, хотя в iteration_20260811_204736 `docker ps`
+показал реально работающий контейнер SearXNG на порту 8888 (не наш
+`searxng_measure_deepagent` из `docker-compose.yml` этого репозитория —
+похоже, отдельный, уже поднятый на этом хосте инстанс; результаты поиска
+через него проверены и релевантны). Порт теперь читается из
+`SEARXNG_URL` env var (тот же паттерн, что `RU_PROXY_URL` в
+`pipeline.py`) — дефолт не меняется, но следующая итерация, если найдёт
+SearXNG на другом порту, может выставить `SEARXNG_URL=http://localhost:8888`
+явно, а не заново решать "docker не поднят".
 """
 
 from __future__ import annotations
 
 import json
+import os
 import urllib.parse
 import urllib.request
 from typing import Dict, List
 
-SEARXNG_URL = "http://localhost:8082"
+SEARXNG_URL = os.environ.get("SEARXNG_URL", "http://localhost:8082")
 
 TRUSTED_DOMAINS = [
     "docs.cntd.ru",
