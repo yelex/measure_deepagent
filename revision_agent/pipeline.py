@@ -1019,6 +1019,105 @@ def extract_svo_gasification_compensation_card(seed: dict, pdf_text: str) -> dic
     }
 
 
+def extract_svo_injury_payment_card(seed: dict, pdf_text: str) -> dict:
+    """Эвристика для ОДНОЙ конкретной меры — "Выплата в случае ранения"
+    (77_svo_3). golden `Ссылка на источник` = `msupport.dszn.ru/pamyatki`
+    (тот же хаб, что и 77_svo_1/2/16), но НЕ та же памятка
+    (`V_LEIMTttBQTeQ`, "Меры поддержки действующего контрактника") — та
+    памятка не упоминает ранение вообще (перепроверено в
+    iteration_20260802_194937, 0 совпадений "ранени"). Хаб-страница
+    (`fetch_text(..., via_jina=True)`) перечисляет отдельный раздел
+    "Информация для участников СВО, получивших ранения в ходе боевых
+    действий" с ДВУМЯ памятками — "...мобилизованным/заключившим
+    контракт" (`disk.yandex.ru/d/zOHTldLTaW0knA`, используется здесь) и
+    "...добровольцем" (`d/1pch65vKzBaZdQ`, не используется — golden
+    `categoryVolunteer=0` для этой строки).
+
+    Памятка (ФОРМА 3.2.1) даёт "Единовременная региональная выплата, Указ
+    Мэра Москвы от 22.09.2022 г. № 52-УМ": 1 000 000 руб. при тяжёлом
+    увечье (Перечень I), 500 000 руб. при лёгком увечье (Перечень II) —
+    совпадает с golden `measureSum`="от 500 000 ₽" (минимальная сумма,
+    `sum_field_match`/`extract_number` возьмёт число 500000 с обеих сторон)
+    и golden `measureTerms` ("1 млн ₽ — при тяжёлом увечье, 500 000 ₽ —
+    при лёгком увечье") практически дословно по числам.
+
+    categoryMobilized/categoryContractor определяются структурно по
+    заголовку памятки и явному перечислению ОБОИХ путей ("заключен
+    контракт..." И "призван... на военную службу по мобилизации" — два
+    отдельных пункта списка условий, не substring-ловушка "мобилизация
+    как путь заключения контракта", описанная в docstring
+    `extract_svo_contract_payment_card`/`extract_svo_monthly_payment_card`
+    для ДРУГОЙ памятки) — здесь мобилизация действительно отдельная
+    целевая категория этой памятки, не текст-паразит. golden для этой
+    строки: Mobilized=1, Contractor=1, Volunteer=0 — совпадает.
+    """
+    sum_confirmed = (
+        "Единовременная региональная выплата" in pdf_text
+        and "1 000 000 руб" in pdf_text
+        and "500 000 руб" in pdf_text
+        and "52-УМ" in pdf_text
+    )
+
+    if not sum_confirmed:
+        return {
+            "measureId": None,
+            "region": seed["region"],
+            "categoryMobilized": 0,
+            "categoryContractor": 0,
+            "categoryVolunteer": 0,
+            "kidsOfMilitary": 0,
+            "measureName": seed["measureName"],
+            "measureSum": None,
+            "measurePeriodicity": None,
+            "measureTerms": None,
+            "department": None,
+        }
+
+    fragments = []
+    m_elig = re.search(
+        r"КТО ИМЕЕТ ПРАВО НА ПОЛУЧЕНИЕ МЕР ПОДДЕРЖКИ ПО РАНЕНИЮ\s*(.+?)Москва, Единый центр",
+        pdf_text,
+        re.DOTALL,
+    )
+    if m_elig:
+        fragments.append(m_elig.group(1))
+    m_heavy = re.search(
+        r"Единовременная региональная выплата Указ Мэра Москвы от 22\.09\.2022 г\. № 52-УМ 1 000 000 руб\.",
+        pdf_text,
+    )
+    if m_heavy:
+        fragments.append(m_heavy.group(0))
+    m_light = re.search(
+        r"Единовременная региональная выплата Указ Мэра Москвы от 22\.09\.2022 г\. № 52-УМ 500 000 руб\.",
+        pdf_text,
+    )
+    if m_light:
+        fragments.append(m_light.group(0))
+    terms = re.sub(r"\s+", " ", " ".join(fragments)).strip() if fragments else None
+
+    department = None
+    m_dept = re.search(r"Единый центр поддержки участников СВО и членов их семей", pdf_text)
+    if m_dept:
+        department = m_dept.group(0)
+
+    has_contractor = "заключен контракт для выполнения задач СВО" in pdf_text
+    has_mobilized = "на военную службу по мобилизации" in pdf_text
+
+    return {
+        "measureId": None,
+        "region": seed["region"],
+        "categoryMobilized": 1 if has_mobilized else 0,
+        "categoryContractor": 1 if has_contractor else 0,
+        "categoryVolunteer": 0,
+        "kidsOfMilitary": 0,
+        "measureName": seed["measureName"],
+        "measureSum": 500000,
+        "measurePeriodicity": "единовременно",
+        "measureTerms": terms,
+        "department": department,
+    }
+
+
 def run_svo_seed(seed: dict) -> dict:
     """Прогоняет одну сво-меру из реестра через фетч + извлечение."""
     if seed["npaUrl"] == "https://docs.cntd.ru/document/1300860766":
@@ -1065,6 +1164,12 @@ def run_svo_seed(seed: dict) -> dict:
         if seed["measureName"].startswith("Компенсационная выплата за газификацию"):
             return extract_svo_gasification_compensation_card(seed, pdf_text)
         return extract_svo_contract_payment_card(seed, pdf_text)
+    if seed["npaUrl"] == "https://disk.yandex.ru/d/zOHTldLTaW0knA":
+        # Отдельная памятка того же хаба msupport.dszn.ru/pamyatki, только
+        # про ранение (мобилизованный/контрактник) — не та же памятка, что
+        # V_LEIMTttBQTeQ (см. docstring extract_svo_injury_payment_card).
+        pdf_text = fetch_yandex_disk_pdf_text(seed["npaUrl"], use_proxy=False)
+        return extract_svo_injury_payment_card(seed, pdf_text)
     raise NotImplementedError(
         f"Нет эвристики извлечения для источника {seed['npaUrl']!r} — "
         "добавь новую в отдельной ralph-итерации, не угадывай молча."
