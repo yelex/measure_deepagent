@@ -133,6 +133,46 @@ def _stem(word: str, stem_len: int = 6) -> str:
     return w[:stem_len] if len(w) > stem_len else w
 
 
+# Слова, которые встречаются в названиях мер слишком часто, чтобы быть
+# содержательным сигналом присутствия темы меры в тексте (см. L011: найдено
+# ложное совпадение "бесплатное" внутри рекламного блока "Попробовать
+# бесплатно" на странице cntd.ru — никак не связанного с текстом закона).
+_GENERIC_STEMS = {_stem(w) for w in (
+    "бесплатный", "бесплатное", "бесплатная", "бесплатно",
+    "компенсация", "компенсационная", "выплата",
+)}
+
+
+def _measure_keywords(measure_name: str) -> list[str]:
+    """Значимые слова названия меры, отсортированные от самого длинного/
+    специфичного к короткому, без стоп-слов и без generic-слов
+    (см. `_GENERIC_STEMS`)."""
+    return sorted(
+        (
+            w for w in measure_name.split()
+            if len(w) > 2
+            and w.lower() not in _STOPWORDS
+            and _stem(w) not in _GENERIC_STEMS
+        ),
+        key=len, reverse=True,
+    )
+
+
+def has_relevant_content(text: str, measure_name: str) -> bool:
+    """Контентный триггер (L011): проверяет, что текст реально содержит
+    фрагмент по теме меры, а не только преамбулу/шапку документа. cntd.ru
+    иногда отдаёт текст длиннее MIN_TEXT_LENGTH, но обрывающийся на первых
+    статьях закона, дополненный не относящимся к делу мусором со страницы
+    (виджеты, реклама, списки) — длины одной недостаточно, чтобы отличить
+    такой обрыв от полного документа."""
+    stripped = _strip_boilerplate(text).strip()
+    text_lower = stripped.lower()
+    for kw in _measure_keywords(measure_name):
+        if text_lower.find(_stem(kw), 3000) > 3000:
+            return True
+    return False
+
+
 def _cut_to_relevant(text: str, measure_name: str, window: int = 8000) -> str:
     """Обрезает текст до релевантного окна: преамбула + окно вокруг меры."""
     text = _strip_boilerplate(text).strip()
@@ -150,10 +190,7 @@ def _cut_to_relevant(text: str, measure_name: str, window: int = 8000) -> str:
     # берём ПЕРВОЕ совпадение — иначе короткое частое слово (напр.
     # "помощь") может встретиться раньше в совсем другом контексте и
     # увести окно от нужного места.
-    keywords = sorted(
-        (w for w in measure_name.split() if len(w) > 2 and w.lower() not in _STOPWORDS),
-        key=len, reverse=True,
-    )
+    keywords = _measure_keywords(measure_name)
     text_lower = text.lower()
     best_pos = -1
     for kw in keywords:

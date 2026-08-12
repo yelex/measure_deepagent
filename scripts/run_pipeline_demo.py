@@ -57,7 +57,7 @@ def run_llm_mode():
                     _os.environ.setdefault(_k, _v)
 
     from agent.pipeline_mode import fetch_source
-    from revision_agent.llm_extract_v2 import extract_measure_via_llm
+    from revision_agent.llm_extract_v2 import extract_measure_via_llm, has_relevant_content
     from revision_agent.npa_fetcher import MIN_TEXT_LENGTH, search_and_fetch_npa
 
     registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
@@ -79,11 +79,18 @@ def run_llm_mode():
             else:
                 print("    нет URL источника в реестре", flush=True)
 
-            if len(source_text) < MIN_TEXT_LENGTH:
-                print(f"    текст короткий ({len(source_text)} симв.) — ищу НПА через Yandex Search (L008)", flush=True)
+            too_short = len(source_text) < MIN_TEXT_LENGTH
+            no_relevant_content = not too_short and not has_relevant_content(source_text, name)
+            if too_short or no_relevant_content:
+                if too_short:
+                    reason = f"текст короткий ({len(source_text)} симв.)"
+                else:
+                    reason = "текст не содержит контента по теме меры (L011: возможен обрыв документа)"
+                print(f"    {reason} — ищу НПА через Yandex Search (L008)", flush=True)
                 try:
-                    source_text = search_and_fetch_npa(name, ls, region)
-                    print(f"    найдено и загружено: {len(source_text)} симв.", flush=True)
+                    found_text = search_and_fetch_npa(name, ls, region)
+                    print(f"    найдено и загружено: {len(found_text)} симв.", flush=True)
+                    source_text = found_text
                 except Exception as e:
                     print(f"    ОШИБКА поиска НПА: {e}", flush=True)
 
