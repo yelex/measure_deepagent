@@ -335,6 +335,14 @@ def extract_measure_via_llm(
                      "measureTerms", "department", "measurePeriodicity"],
     }
 
+    # Явная карта булевых полей по ЖС (не startswith-эвристика — она
+    # ошибочно ловила текстовое поле categoryOfVeteran ЖС "вбд", см. L006).
+    boolean_fields = {
+        "вбд": set(),
+        "сво": {"categoryMobilized", "categoryContractor", "categoryVolunteer", "kidsOfMilitary"},
+        "инвалиды": {"cause_general_disease", "cause_war_trauma", "cause_radiation", "cause_disabled_child"},
+    }.get(ls, set())
+
     # Объединяем тексты для grounding-проверки
     combined_text = " ".join(clean_texts.values())
 
@@ -366,7 +374,7 @@ def extract_measure_via_llm(
         # Grounding: цитата должна быть в очищенном тексте
         if value is not None and _quote_grounded(quote, combined_text):
             # Для булевых полей — нормализуем
-            if fname.startswith("category") or fname.startswith("cause") or fname.startswith("kids"):
+            if fname in boolean_fields:
                 card[fname] = int(value) if str(value) in ("0", "1", "0.0", "1.0") else (1 if value else 0)
             else:
                 # Для сумм — пытаемся извлечь число
