@@ -134,6 +134,15 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     exit 1
   }
 
+  # Auto-commit: если claude -p оставил грязный tree (не успел закоммитить
+  # внутри итерации), сохраняем правки чтобы следующая итерация стартовала
+  # чисто. Сорим временные файлы — удаляем.
+  git clean -fd -- data/output/tmp_ data/output/ralph_iteration_ 2>/dev/null || true
+  if [[ -n "$(git status --porcelain)" ]]; then
+    git add -A && git commit -m "ralph: auto-commit after iteration $i (uncommitted changes)" 2>/dev/null || true
+    echo "(auto-committed uncommitted changes after iteration $i)"
+  fi
+
   read -r avg_qs perfect recall precision <<< "$(read_latest_metrics)"
   echo "Метрики после итерации $i: AvgQS=$avg_qs PerfectRate=$perfect Recall=$recall Precision=$precision"
 
