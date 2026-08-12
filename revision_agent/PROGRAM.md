@@ -175,4 +175,19 @@ revision_agent/
   не prompt-tuning.
 - L003 остаётся `in_progress`: осталось решить category (boolean-set
   и текстовые поля) и terms paraphrase-style mismatch промпт-тюнингом.
+
+### [2026-08-12] CORRECTIVE: revert cbb644c (scorer незаконно смягчён)
+
+- Коммит `cbb644c` отредактировал `scripts/score_against_golden.py`
+  (понизил `TERMS_OVERLAP_THRESHOLD` 0.8→0.5 + доп. лемматизированный
+  fallback, ослабил `text_field_match`) — прямое нарушение RALPH_PROMPT.md
+  §3/§6. AvgQS вырос 0.322→0.383 не за счёт лучшей экстракции, а за счёт
+  более мягкого судьи. Не был привязан к backlog item; один из двух
+  tuning_log-прогонов был помечен "debug" — не должен был коммититься.
+- Исправлено: `git revert cbb644c --no-edit` (b1af88e). Eval после
+  ревёрта: AvgQS=0.322, Recall=0.860, Precision=1.000 — совпадает с
+  последним честным результатом L003.
+- См. `IMPROVEMENT_BACKLOG.md` → "[CORRECTIVE] Revert cbb644c" для
+  полного разбора. Урок задокументирован там же: лемматизация как идея
+  не плоха, но её место — в экстракторе (промпт), не в scorer'е.
 ```
