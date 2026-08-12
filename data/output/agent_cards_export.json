@@ -4,7 +4,7 @@
       "measureId": null,
       "region": "Москва",
       "measureName": "Бесплатный проезд на аэроэкспрессе",
-      "categoryOfVeteran": 1,
+      "categoryOfVeteran": "Ветераны боевых действий из числа лиц, указанных в пп. 1-4 п. 1 ст. 3 Федерального закона «О ветеранах»",
       "measureSum": null,
       "measurePeriodicity": null,
       "measureTerms": "Для проезда необходимо оформить безденежный проездной документ",
@@ -27,7 +27,7 @@
       "categoryOfVeteran": null,
       "measureSum": null,
       "measurePeriodicity": null,
-      "measureTerms": "Место жительства в городе Москве; заявительная основа",
+      "measureTerms": null,
       "department": null
     },
     {
@@ -72,20 +72,20 @@
       "kidsOfMilitary": 1,
       "measureSum": null,
       "measureTerms": "студентам, обучающимся по очной форме обучения по образовательным программам среднего профессионального образования в государственных образовательных организациях, подведомственных органам исполнительной власти города Москвы",
-      "department": "Департамент образования и науки города Москвы",
-      "measurePeriodicity": "одноразовое горячее питание (обед) — ежедневно в учебные дни"
+      "department": "органы исполнительной власти города Москвы",
+      "measurePeriodicity": "одноразовое горячее питание (обед)"
     },
     {
       "measureId": null,
       "region": "Москва",
       "measureName": "Бесплатное питание в школах",
       "categoryMobilized": null,
-      "categoryContractor": null,
-      "categoryVolunteer": null,
-      "kidsOfMilitary": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": 1,
+      "kidsOfMilitary": 1,
       "measureSum": null,
-      "measureTerms": null,
-      "department": "органы исполнительной власти города Москвы",
+      "measureTerms": "бесплатное двухразовое горячее питание (завтрак, обед) детям 1-11 классов в государственных образовательных организациях, подведомственных органам исполнительной власти города Москвы, муниципальных образовательных организациях, осуществляющих образовательную деятельность в городе Москве",
+      "department": "Департамент образования и науки города Москвы",
       "measurePeriodicity": null
     },
     {
@@ -93,11 +93,11 @@
       "region": "Москва",
       "measureName": "Зачисление ребёнка в детский сад",
       "categoryMobilized": null,
-      "categoryContractor": null,
+      "categoryContractor": 1,
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": null,
-      "measureTerms": "во внеочередном порядке, детей по достижении ими возраста полутора лет",
+      "measureTerms": "Направление во внеочередном порядке детей по достижении ими возраста полутора лет",
       "department": "Департамент образования и науки города Москвы",
       "measurePeriodicity": null
     },
@@ -137,7 +137,7 @@
       "kidsOfMilitary": 1,
       "measureSum": null,
       "measureTerms": "Зачисление в первоочередном порядке детей 1-6 классов в группы продленного дня, обучающихся в государственных образовательных организациях, подведомственных органам исполнительной власти города Москвы, муниципальных образовательных организациях, осуществляющих образовательную деятельность в городе Москве, и освобождение от платы, взимаемой за присмотр и уход за указанными детьми в группах продленного дня, при посещении таких групп",
-      "department": "Департамент образования и науки города Москвы",
+      "department": "органы исполнительной власти города Москвы",
       "measurePeriodicity": null
     },
     {
@@ -149,8 +149,8 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": null,
-      "measureTerms": "бесплатное посещение занятий (кружки, секции и иные подобные занятия) по дополнительным общеобразовательным программам в государственных организациях, подведомственных органам исполнительной власти города Москвы, муниципальных образовательных организациях, осуществляющих образовательную деятельность по дополнительным общеобразовательным программам в городе Москве",
-      "department": "органы исполнительной власти города Москвы",
+      "measureTerms": "Предоставляется детям семей военнослужащих (контрактников Минобороны / Росгвардии) и добровольцев, выполняющих задачи в ходе СВО, в государственных организациях и муниципальных образовательных организациях, подведомственных органам исполнительной власти города Москвы",
+      "department": "Органы исполнительной власти города Москвы (государственные образовательные организации, подведомственные органам исполнительной власти города Москвы)",
       "measurePeriodicity": null
     },
     {
@@ -159,11 +159,11 @@
       "measureName": "Социальное обслуживание на дому членов семей участников СВО",
       "categoryMobilized": null,
       "categoryContractor": null,
-      "categoryVolunteer": 1,
+      "categoryVolunteer": null,
       "kidsOfMilitary": 1,
       "measureSum": null,
       "measureTerms": "признанных в установленном порядке нуждающимися в социальном обслуживании независимо от состава семьи и без учета уровня доходов семьи",
-      "department": "Департамент труда и социальной защиты населения города Москвы",
+      "department": "Организации социального обслуживания, включенные в Реестр поставщиков социальных услуг города Москвы; Департамент труда и социальной защиты населения города Москвы",
       "measurePeriodicity": null
     },
     {
@@ -186,9 +186,9 @@
       "categoryMobilized": null,
       "categoryContractor": 1,
       "categoryVolunteer": 1,
-      "kidsOfMilitary": 0,
+      "kidsOfMilitary": null,
       "measureSum": null,
-      "measureTerms": "Предоставляется семьям военнослужащих, заключивших контракт о прохождении военной службы с Минобороны РФ и выполняющих задачи в ходе СВО, а также семьям граждан, пребывающих в добровольческих формированиях. Распространяется также на семьи погибших (умерших), ставших инвалидами вследствие военной травмы (п. 1(3)).",
+      "measureTerms": "предоставляется семьям военнослужащих (контрактников с Минобороны РФ или Росгвардией) и добровольцев, отобранных Военным комиссариатом города Москвы или Пунктом отбора на военную службу по контракту города Москвы и выполняющих задачи в ходе СВО",
       "department": null,
       "measurePeriodicity": null
     },
@@ -199,10 +199,10 @@
       "categoryMobilized": null,
       "categoryContractor": null,
       "categoryVolunteer": 1,
-      "kidsOfMilitary": null,
+      "kidsOfMilitary": 1,
       "measureSum": null,
-      "measureTerms": "Консультирование семьи по юридическим вопросам. Предоставляется семьям военнослужащих-контрактников и добровольцев, выполняющих задачи в ходе СВО, отобранных Военным комиссариатом города Москвы.",
-      "department": null,
+      "measureTerms": "Предоставляется семьям военнослужащих (контрактников) и добровольцев, отобранных Военным комиссариатом города Москвы / Пунктом отбора на военную службу по контракту города Москвы, выполняющих задачи в ходе СВО. Также распространяется на семьи погибших (умерших) военнослужащих (п. 1(3)).",
+      "department": "Департамент труда и социальной защиты населения города Москвы",
       "measurePeriodicity": null
     },
     {
@@ -210,11 +210,11 @@
       "region": "Москва",
       "measureName": "Карьерное консультирование, профориентация",
       "categoryMobilized": null,
-      "categoryContractor": null,
-      "categoryVolunteer": null,
+      "categoryContractor": 1,
+      "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": null,
-      "measureTerms": "Содействие в поиске работы членам семьи",
+      "measureTerms": null,
       "department": null,
       "measurePeriodicity": null
     },
@@ -241,8 +241,8 @@
       "kidsOfMilitary": null,
       "measureSum": "50000",
       "measureTerms": "включен руководством военного комиссариата в списочный состав для осуществления выплат; выполняет задачи в ходе СВО; прекращается после увольнения со службы",
-      "department": "Мэр Москвы",
-      "measurePeriodicity": "ежемесячная"
+      "department": "Мэрия Москвы",
+      "measurePeriodicity": "ежемесячно"
     },
     {
       "measureId": null,
@@ -266,7 +266,7 @@
       "categoryVolunteer": null,
       "kidsOfMilitary": 0,
       "measureSum": null,
-      "measureTerms": "Получение увечья (ранения, травмы, контузии) при выполнении задач в ходе СВО. Для региональных выплат (Москва) — отбор ВК г. Москвы или контракт из Москвы. Ранение после 12.11.2024 для федеральных выплат лёгкой/неперечневой категории.",
+      "measureTerms": null,
       "department": null,
       "measurePeriodicity": "Единовременная"
     }
@@ -284,19 +284,41 @@
       "measure_second_group": null,
       "measure_third_group": null,
       "measure_disabled_child": "17790",
-      "measureTerms": "Назначается лицу, занятому уходом за ребенком-инвалидом или инвалидом с детства в возрасте до 23 лет. Порядок и условия предоставления, в том числе с применением критериев нуждаемости, устанавливаются Правительством Москвы.",
+      "measureTerms": "Выплата назначается лицу, занятому уходом за ребёнком-инвалидом или инвалидом с детства в возрасте до 23 лет; получатель должен иметь место жительства в городе Москве; порядок и условия предоставления устанавливаются Правительством Москвы",
       "department": "Правительство Москвы",
+      "measurePeriodicity": "ежемесячная"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Компенсация детям-инвалидам либо инвалидам с детства до 23 лет, потерявшим кормильца",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": 1,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": "2153",
+      "measureTerms": "Назначается детям-инвалидам в возрасте до 18 лет и инвалидам с детства в возрасте до 23 лет, потерявшим кормильца (умер один или оба родителя), имеющим место жительства в городе Москве",
+      "department": "Департамент труда и социальной защиты населения города Москвы",
       "measurePeriodicity": "Ежемесячно"
     },
     {
       "measureId": null,
       "region": "Москва",
-      "measureName": "Компенсация детям-инвалидам либо инвалидам с детства до 23 лет, потерявшим кормильца"
-    },
-    {
-      "measureId": null,
-      "region": "Москва",
-      "measureName": "Компенсация на ребёнка неработающих родителей — инвалидов I или II группы"
+      "measureName": "Компенсация на ребёнка неработающих родителей — инвалидов I или II группы",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": "17790",
+      "measure_second_group": "17790",
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": "неработающие родители, являющиеся инвалидами I или II группы, совместно проживающие с ребёнком в возрасте до 18 лет, имеющим место жительства в городе Москве",
+      "department": "МФЦ города Москвы",
+      "measurePeriodicity": "ежемесячно"
     },
     {
       "measureId": null,
@@ -311,8 +333,8 @@
       "measure_third_group": "892",
       "measure_disabled_child": null,
       "measureTerms": "на детей в возрасте до 1,5 лет, родители которых являются инвалидами и (или) пенсионерами",
-      "department": "Правительство Москвы",
-      "measurePeriodicity": "ежемесячная"
+      "department": "уполномоченный Правительством Москвы исполнительный орган города Москвы",
+      "measurePeriodicity": "ежемесячно"
     },
     {
       "measureId": null,
@@ -326,7 +348,7 @@
       "measure_second_group": null,
       "measure_third_group": null,
       "measure_disabled_child": null,
-      "measureTerms": "на детей до 3 лет отдельным категориям граждан",
+      "measureTerms": "на детей до 3 лет",
       "department": "Правительство Москвы",
       "measurePeriodicity": "Ежемесячно"
     },
@@ -359,7 +381,18 @@
     {
       "measureId": null,
       "region": "Москва",
-      "measureName": "Предоставление бесплатного питания"
+      "measureName": "Предоставление бесплатного питания",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": 1,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
+      "department": "Департамент здравоохранения города Москвы",
+      "measurePeriodicity": null
     },
     {
       "measureId": null,
@@ -422,7 +455,18 @@
     {
       "measureId": null,
       "region": "Москва",
-      "measureName": "Региональная компенсация инвалидам на технические средства реабилитации"
+      "measureName": "Региональная компенсация инвалидам на технические средства реабилитации",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
+      "department": "Департамент труда и социальной защиты населения г. Москвы",
+      "measurePeriodicity": "Разовая (за ТСР, ПОИ, услуги сурдоперевода); ежегодная (на содержание собаки-проводника)"
     },
     {
       "measureId": null,
@@ -437,7 +481,7 @@
       "measure_third_group": null,
       "measure_disabled_child": null,
       "measureTerms": null,
-      "department": "ГАУЗ «СП №53 ДЗМ» Департамента здравоохранения города Москвы",
+      "department": "ГАУЗ «СП №53 ДЗМ» (Департамент здравоохранения города Москвы)",
       "measurePeriodicity": null
     },
     {
@@ -463,7 +507,18 @@
     {
       "measureId": null,
       "region": "Москва",
-      "measureName": "Льгота по земельному налогу"
+      "measureName": "Льгота по земельному налогу",
+      "cause_general_disease": null,
+      "cause_war_trauma": null,
+      "cause_radiation": null,
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
+      "department": null,
+      "measurePeriodicity": null
     }
   ]
 }

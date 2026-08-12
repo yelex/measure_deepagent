@@ -45,6 +45,17 @@ def run_regex_mode():
 def run_llm_mode():
     """LLM-эра: fetch (agent.pipeline_mode.fetch_source) + generic
     LLM-экстрактор (llm_extract_v2.extract_measure_via_llm, L001-фикс)."""
+    # Load .env (GLM_API_KEY etc.) — pipeline_mode does it on import,
+    # but llm_extract_v2 reads os.environ at call time.
+    import os as _os
+    _env = REPO_ROOT / ".env"
+    if _env.exists():
+        with open(_env) as _f:
+            for _line in _f:
+                if "=" in _line and not _line.startswith("#"):
+                    _k, _v = _line.strip().split("=", 1)
+                    _os.environ.setdefault(_k, _v)
+
     from agent.pipeline_mode import fetch_source
     from revision_agent.llm_extract_v2 import extract_measure_via_llm
 
