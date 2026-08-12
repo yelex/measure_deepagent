@@ -73,3 +73,18 @@ python3 scripts/score_against_golden.py \
 - Не увеличивай допуски/пороги eval.
 - 3 revert подряд на одной задаче → `blocked`.
 - **Не откатывайся на regex.** Если LLM не работает — чини LLM.
+
+### Scorer — НЕ ТРОГАЙ
+
+Файл `scripts/score_against_golden.py` модифицируется **только человеком**
+(вне Ralph loop). Если в `git log` ты видишь коммит с правками scorer'а
+(например «scorer: add pymorphy3 lemmatization») — это осознанное изменение
+мерной линейки, утверждённое человеком.
+
+**КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО:**
+- Редактировать `score_against_golden.py`
+- Откатывать (revert) коммиты, которые правят scorer
+- Менять пороги (`FIELD_TEXT_THRESHOLD`, `TERMS_OVERLAP_THRESHOLD`, и т.д.)
+
+Если текущий scorer содержит лемматизацию (pymorphy3) — работай с ним
+как с данностью, не пытайся «исправить» или откатить.

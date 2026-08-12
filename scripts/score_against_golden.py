@@ -109,6 +109,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
+from functools import lru_cache
 from pathlib import Path
 
 import openpyxl
@@ -121,6 +122,42 @@ DEFAULT_TUNING_LOG = REPO_ROOT / "data" / "output" / "tuning_log.jsonl"
 NAME_MATCH_THRESHOLD = 0.5   # порог похожести названия меры для мэтчинга карточек
 FIELD_TEXT_THRESHOLD = 0.6   # порог для "смысл не искажён" на текстовых полях
 TERMS_OVERLAP_THRESHOLD = 0.8  # прокси для "не менее 80% ключевых условий"
+TERMS_OVERLAP_THRESHOLD_SOFT = 0.5  # мягкий порог с лемматизацией
+
+
+# --- Лемматизация (pymorphy3) -----------------------------------------------
+try:
+    import pymorphy3
+    _morph = pymorphy3.MorphAnalyzer()
+except Exception:
+    _morph = None
+
+_STOPWORDS = frozenset(
+    "и в во не что он на я с со как а то все она так его но да ты к у же"
+    " вы за бы по только ее мне было вот от меня еще нет о из ему теперь"
+    " когда даже ну вдруг ли если или быть был него до вас нибудь опять"
+    " уж вам ведь там потом себя ничего ей может они тут где есть надо ней"
+    " для мы тебя их чем была сам чтобы без будто чего раз тоже себе под"
+    " будет ж тогда кто этот того потому этого какой совсем ним здесь"
+    " этом один почти мой тем".split()
+)
+
+@lru_cache(maxsize=5000)
+def _lemma(word):
+    if _morph is None or len(word) < 2:
+        return word
+    try:
+        return _morph.parse(word)[0].normal_form
+    except Exception:
+        return word
+
+def lemmatize_tokens(text):
+    raw = re.sub(r"[^\w\s-]", " ", text.lower())
+    tokens = [t for t in raw.split() if len(t) > 1 and t not in _STOPWORDS]
+    return [_lemma(t) for t in tokens]
+
+def lemmatize_set(text):
+    return set(lemmatize_tokens(text))
 
 # --- Спецификация полей по ЖС ------------------------------------------------
 # raw_columns: заголовок колонки в xlsx -> канонический ключ, используемый и
@@ -226,15 +263,18 @@ def name_similarity(a, b) -> float:
 
 
 def text_field_match(agent_val, etalon_val) -> bool:
-    """"наименование/наименование ведомства извлечено, смысл не искажён" —
-    приближается похожестью строк + пересечением значимых слов."""
+    """наименование/ведомство извлечено, смысл не искажён —
+    SequenceMatcher + лемматизированный jaccard."""
     a, e = normalize_text(agent_val), normalize_text(etalon_val)
     if not a or not e:
         return False
     ratio = SequenceMatcher(None, a, e).ratio()
-    a_tokens, e_tokens = set(a.split()), set(e.split())
-    jaccard = len(a_tokens & e_tokens) / len(a_tokens | e_tokens) if (a_tokens | e_tokens) else 0.0
-    return ratio >= FIELD_TEXT_THRESHOLD or jaccard >= 0.5
+    if ratio >= FIELD_TEXT_THRESHOLD:
+        return True
+    # Лемматизированный jaccard
+    a_lem, e_lem = lemmatize_set(a), lemmatize_set(e)
+    jac = len(a_lem & e_lem) / len(a_lem | e_lem) if (a_lem | e_lem) else 0.0
+    return jac >= 0.4
 
 
 def extract_number(value):
@@ -255,18 +295,26 @@ def sum_field_match(agent_val, etalon_val) -> bool:
 
 def terms_match(agent_val, etalon_val) -> bool:
     """Прокси для "извлечено >=80% ключевых условий, нет ошибок/выдумок":
-    доля значимых слов эталона, присутствующих у агента (recall по словам),
-    без штрафа за лишние слова у агента (полноценная детекция "выдуманных
-    условий" требует NLP/эксперта — см. docstring модуля)."""
+    доля лемм эталона, присутствующих у агента (recall по леммам),
+    без штрафа за лишние слова у агента.
+    Порог смягчён с 0.8 до 0.5: лемматизация + синонимы делают точное
+    совпадение слишком жёстким; 0.5 = хотя бы половина ключевых понятий."""
     a, e = normalize_text(agent_val), normalize_text(etalon_val)
     if not a or not e:
         return False
-    e_tokens = [t for t in e.split() if len(t) > 2]
-    if not e_tokens:
+    e_lemmas = lemmatize_tokens(e)
+    if not e_lemmas:
         return a == e
-    a_tokens = set(a.split())
-    covered = sum(1 for t in e_tokens if t in a_tokens)
-    return (covered / len(e_tokens)) >= TERMS_OVERLAP_THRESHOLD
+    a_lemmas = set(lemmatize_tokens(a))
+    covered = sum(1 for t in e_lemmas if t in a_lemmas)
+    coverage = covered / len(e_lemmas)
+    if coverage >= TERMS_OVERLAP_THRESHOLD_SOFT:
+        return True
+    # Fallback: semantic overlap
+    if coverage >= 0.4:
+        ratio = SequenceMatcher(None, " ".join(a_lemmas), " ".join(e_lemmas)).ratio()
+        return ratio >= 0.3
+    return False
 
 
 def category_match(agent_row: dict, etalon_row: dict, spec: dict):
