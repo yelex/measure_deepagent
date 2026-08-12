@@ -58,6 +58,7 @@ def run_llm_mode():
 
     from agent.pipeline_mode import fetch_source
     from revision_agent.llm_extract_v2 import extract_measure_via_llm
+    from revision_agent.npa_fetcher import MIN_TEXT_LENGTH, search_and_fetch_npa
 
     registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
     cards_by_ls = {"вбд": [], "сво": [], "инвалиды": []}
@@ -69,18 +70,28 @@ def run_llm_mode():
             region = seed.get("region", "Москва")
             print(f"[{ls}] {name!r} <- {url}", flush=True)
 
-            if not url:
-                print("    SKIP: нет URL источника", flush=True)
+            source_text = ""
+            if url:
+                try:
+                    source_text = fetch_source(url)
+                except Exception as e:
+                    print(f"    ОШИБКА загрузки: {e}", flush=True)
+            else:
+                print("    нет URL источника в реестре", flush=True)
+
+            if len(source_text) < MIN_TEXT_LENGTH:
+                print(f"    текст короткий ({len(source_text)} симв.) — ищу НПА через Yandex Search (L008)", flush=True)
+                try:
+                    source_text = search_and_fetch_npa(name, ls, region)
+                    print(f"    найдено и загружено: {len(source_text)} симв.", flush=True)
+                except Exception as e:
+                    print(f"    ОШИБКА поиска НПА: {e}", flush=True)
+
+            if not source_text:
                 cards_by_ls[ls].append({"measureId": None, "region": region, "measureName": name})
                 continue
 
-            texts = {}
-            try:
-                texts["источник_1"] = fetch_source(url)[:12000]
-            except Exception as e:
-                print(f"    ОШИБКА загрузки: {e}", flush=True)
-                cards_by_ls[ls].append({"measureId": None, "region": region, "measureName": name})
-                continue
+            texts = {"источник_1": source_text[:12000]}
 
             if seed.get("amountsUrl"):
                 try:

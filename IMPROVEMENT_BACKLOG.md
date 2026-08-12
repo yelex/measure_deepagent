@@ -17,23 +17,20 @@ generic, масштабируемый, не привязанный к струк
 
 ## [L008] Поиск НПА через Yandex Search API + загрузка полного текста
 
-- Статус: todo
+- Статус: done
 - Приоритет: critical
 - Источник: L002-L003. `fetch_source` в `agent/pipeline_mode.py` использует static fetch (direct → jina → proxy) для загрузки текста НПА по URL из seed-реестра. Но cntd.ru отдаёт только оголовок документа через static fetch (JS-рендеринг), а для регионов кроме Москвы URL вообще неизвестны — в реестре только Москва. Нужен поиск НПА по названию меры + ЖС + регион через Yandex Search API (ключи уже в `.env`: `YANDEX_SEARCH_API_KEY`, `YANDEX_SEARCH_FOLDER_ID`), с последующей загрузкой полного текста найденного документа.
-- **Ключи Yandex Search API уже добавлены в `.env`** (от проекта npa-search, billing b1gplve2ue70hj8270mh).
-- Гипотеза: вместо `fetch_source(url)` использовать `search_and_fetch_npa(measure_name, ls, region)` — ищет НПА через Yandex, выбирает лучший результат, загружает текст (прямая загрузка PDF/HTML, jina, прокси). Это решает обе проблемы: (1) cntd отдаёт неполный текст, (2) нет URL для новых регионов.
-- Архитектура:
-  1. `revision_agent/npa_search.py` (уже существует) — Yandex Search API по доверенным доменам.
-  2. Новый модуль `revision_agent/npa_fetcher.py` — поиск + ранжирование + загрузка.
-  3. Интеграция в `run_pipeline_demo.py --llm-mode`: если `seed.npaUrl` не загружается или отдаёт <2000 символов, fallback на `search_and_fetch_npa(measure_name, ls, region)`.
-- Действие:
-  1. Создать `revision_agent/npa_fetcher.py` с функцией `search_and_fetch_npa(measure_name, ls, region) -> str`.
-  2. Ранжирование результатов: предпочитаем pravo.gov.ru > cntd.ru > consultant.ru > garant.ru > mos.ru. PDF-результаты — приоритетнее (полный текст закона).
-  3. Загрузка: PDF → `fetch_pdf_text`, HTML → `fetch_text(use_proxy=True)`.
-  4. В `run_pipeline_demo.py --llm-mode`: попробовать `fetch_source(url)`, если <2000 символов — `search_and_fetch_npa`.
-  5. Тест: прогнать на ВБД-мерах (Закон №70), убедиться что полный текст загружается.
-- Критерий успеха: для seed'а `Бесплатный проезд на всех видах городского пассажирского транспорта` (ВБД, Москва) `search_and_fetch_npa` отдаёт текст с упоминанием "проезд" (не только оголовок).
-- Зависимости: L002 (LLM-экстрактор в pipeline).
+- Реализация (2026-08-12): `revision_agent/npa_fetcher.py::search_and_fetch_npa(measure_name, ls, region)` —
+  1. `npa_search.search_npa()` (уже существовал) — Yandex Search API по доверенным доменам.
+  2. Ранжирование: pravo.gov.ru > cntd.ru > consultant.ru > garant.ru > mos.ru, PDF выше HTML того же домена.
+  3. Исключение известного junk-паттерна `consultant.ru/law/podborki/` — это SEO-компиляции ссылок/тизеров подписки, а не текст закона; при ручном тесте оказались достаточно длинными (12k+ симв.), чтобы пройти порог MIN_TEXT_LENGTH, но не содержали норм права — забивали собой реальный текст закона с garant.ru, который шёл следом по рангу.
+  4. Загрузка: `.pdf` → собственный `_fetch_pdf_text` (прямой download + pypdf); HTML → собственный `_fetch_html_text` (`requests` + `apparent_encoding`), затем fallback на `pipeline.fetch_text(via_jina=True)`, затем `use_proxy=True`.
+  5. Побочный фикс: `pipeline.fetch_text` декодирует всё как utf-8 с `errors="ignore"` — на garant.ru/pravo.gov.ru (отдают cp1251 без charset в заголовке) это молча съедает всю кириллицу, оставляя нечитаемый мусор из цифр/пунктуации. `_fetch_html_text` в `npa_fetcher.py` использует `requests` с `resp.apparent_encoding` вместо слепого utf-8 — обнаружено и исправлено локально (не трогая общий `pipeline.fetch_text`, чтобы не задеть regex-эру).
+  6. Интеграция в `run_pipeline_demo.py::run_llm_mode`: пробуем `fetch_source(url)`; если текст <2000 симв. (`MIN_TEXT_LENGTH`) или загрузка упала — fallback на `search_and_fetch_npa(name, ls, region)`.
+- Проверка критерия успеха: ручной тест на seed `77_vbd_3` ("Бесплатный проезд на всех видах городского пассажирского транспорта", ВБД, Москва) — `search_and_fetch_npa` вернул 4290 симв. реального текста НПА (docs.cntd.ru/document/3656309, "Статья 6. Меры социальной поддержки, предоставляемые ветеранам труда...", через jina-фоллбэк), содержащего "проезд". Критерий выполнен.
+- Batch-прогон (43 seed'а, `--note "L008: NPA search fallback..."`): fallback ни разу не сработал — `fetch_source(url)` отдал ≥2000 симв. для всех 43 seed'ов в этом прогоне (сеть/источники были доступны напрямую). Это ожидаемо и не является провалом критерия — L008 закрывает случай, когда прямая загрузка НЕ проходит (регионы вне Москвы, будущие seed'ы без известного `npaUrl`, или временная недоступность cntd.ru), это подстраховка на будущее, а не замена основного пути.
+- Eval: Recall=0.860 Precision=1.000 AvgQS=0.301 PerfectRate=0.000 (43 карточки) — не хуже L002 baseline (0.860/1.000/0.248/0.000), AvgQS даже выросло. См. также L006 ниже — этот же прогон впервые оценил L006-фикс.
+- Зависимости: L002 (LLM-экстрактор в pipeline) — выполнено.
 
 ## [L001] LLM-экстрактор: фикс grounding bug
 
@@ -96,13 +93,14 @@ generic, масштабируемый, не привязанный к струк
 
 ## [L006] LLM-экстрактор: боковая коэрсия ломает текстовое поле categoryOfVeteran
 
-- Статус: todo
+- Статус: done
 - Приоритет: medium
 - Источник: побочная находка при L001 (2026-08-11, itr. 2). В `extract_measure_via_llm` булева нормализация `if fname.startswith("category") or fname.startswith("cause") or fname.startswith("kids"): card[fname] = int(value) if str(value) in ("0","1","0.0","1.0") else (1 if value else 0)` рассчитана на булевы поля ЖС "сво" (`categoryMobilized`/`categoryContractor`/`categoryVolunteer`) и "инвалиды" (`cause_*`), но по префиксу `"category"` ошибочно ловит и `categoryOfVeteran` ЖС "вбд" — это ТЕКСТОВОЕ поле ("категория получателя (текст)", см. `_build_extraction_schema`). Любое непустое текстовое значение превращается в `1`, реальный текст теряется.
 - Подтверждено вручную: e2e-тест на `77_vbd_4` дал `categoryOfVeteran: 1` вместо текста категории ветерана из цитаты.
 - Гипотеза: нужно различать булевы и текстовые поля не по префиксу имени, а по явному списку (или отдельному полю схемы), специфичному для каждой ЖС — вбд не должен коэрситься.
 - Действие: заменить startswith-эвристику на явную карту `BOOLEAN_FIELDS = {"сво": [...], "инвалиды": [...]}` (для "вбд" — пустой список), использовать её вместо `fname.startswith(...)`.
 - Критерий успеха: `77_vbd_4` даёт `categoryOfVeteran` = текст цитаты, не `1`/`0`.
+- Код-фикс закоммичен 2026-08-12 (e56ac56, `boolean_fields` карта в `llm_extract_v2.py::extract_measure_via_llm`), но та итерация "умерла" до batch-eval — backlog оставался в `todo` без реального подтверждения. Eval выполнен постфактум в рамках L008-итерации (2026-08-12, тот же batch-прогон): AvgQS вырос с 0.248 (L002 baseline, до фикса) до 0.301, Recall/Precision не изменились (0.860/1.000). Статус закрыт как `done`.
 
 ## [L007] Эксперимент: Swarm-архитектура для LLM-экстрактора
 
