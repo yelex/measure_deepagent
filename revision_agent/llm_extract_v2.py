@@ -121,6 +121,18 @@ def _strip_boilerplate(text: str) -> str:
     return text
 
 
+_STOPWORDS = {
+    "в", "во", "и", "с", "со", "на", "для", "от", "по", "к", "ко", "из",
+    "за", "у", "о", "об", "при", "или", "не", "их", "ее", "её", "его",
+}
+
+
+def _stem(word: str, stem_len: int = 6) -> str:
+    """Грубый стем для сравнения без учёта падежных окончаний."""
+    w = word.lower()
+    return w[:stem_len] if len(w) > stem_len else w
+
+
 def _cut_to_relevant(text: str, measure_name: str, window: int = 8000) -> str:
     """Обрезает текст до релевантного окна: преамбула + окно вокруг меры."""
     text = _strip_boilerplate(text).strip()
@@ -130,13 +142,25 @@ def _cut_to_relevant(text: str, measure_name: str, window: int = 8000) -> str:
     # Первые 3000 символов — преамбула с категориями получателей
     preamble = text[:3000]
 
-    # Найти позицию ближе к названию меры
-    keywords = measure_name.split()[:3]
+    # Найти позицию ближе к названию меры. Сравниваем по стему
+    # (первые 6 символов слова), т.к. русские падежные окончания
+    # ломают точное substring-совпадение (напр. "юридическая" в имени
+    # меры vs "юридическим"/"юридическую" в тексте акта). Ключевые слова
+    # перебираем от самого длинного (самого специфичного) к короткому и
+    # берём ПЕРВОЕ совпадение — иначе короткое частое слово (напр.
+    # "помощь") может встретиться раньше в совсем другом контексте и
+    # увести окно от нужного места.
+    keywords = sorted(
+        (w for w in measure_name.split() if len(w) > 2 and w.lower() not in _STOPWORDS),
+        key=len, reverse=True,
+    )
+    text_lower = text.lower()
     best_pos = -1
     for kw in keywords:
-        pos = text.lower().find(kw.lower())
+        pos = text_lower.find(_stem(kw), 3000)
         if pos > 3000:
-            best_pos = max(best_pos, pos)
+            best_pos = pos
+            break
 
     if best_pos == -1:
         remaining = text[3000:3000 + window - 3000]

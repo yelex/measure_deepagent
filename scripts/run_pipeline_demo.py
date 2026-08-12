@@ -91,11 +91,16 @@ def run_llm_mode():
                 cards_by_ls[ls].append({"measureId": None, "region": region, "measureName": name})
                 continue
 
-            texts = {"источник_1": source_text[:12000]}
+            # Обрезка тут — только защита от аномально больших документов;
+            # реальное окно для LLM формирует _cut_to_relevant (window=8000)
+            # внутри extract_measure_via_llm. Раньше [:12000] обрезали ДО
+            # неё и теряли контент по мерам, чей текст в общем документе
+            # (несколько мер на один npaUrl) начинается позже 12000 символов.
+            texts = {"источник_1": source_text[:40000]}
 
             if seed.get("amountsUrl"):
                 try:
-                    texts["источник_2_суммы"] = fetch_source(seed["amountsUrl"])[:8000]
+                    texts["источник_2_суммы"] = fetch_source(seed["amountsUrl"])[:40000]
                 except Exception as e:
                     print(f"    Второй источник не загружен: {e}", flush=True)
 
