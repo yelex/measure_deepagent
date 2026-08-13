@@ -81,7 +81,22 @@ def run_llm_mode():
                 print("    нет URL источника в реестре", flush=True)
 
             too_short = len(source_text) < MIN_TEXT_LENGTH
-            no_relevant_content = not too_short and not has_relevant_content(source_text, name)
+            # L011 изначально задумывался как фикс конкретно для cntd.ru
+            # (JS-рендеринг отдаёт только оголовок закона, MIN_TEXT_LENGTH
+            # проходит, но текст неполный). Реализация (051a2e2) применила
+            # has_relevant_content ко ВСЕМ доменам без разбора — для
+            # документов, посвящённых одной конкретной мере (частый случай
+            # для "сво"/"инвалиды" на mos.ru и др.), ключевое слово встречается
+            # только в преамбуле (< 3000 симв.) и не повторяется дальше;
+            # эвристика ошибочно бракует корректно загруженный документ и
+            # форсирует fallback на Yandex Search (L008) почти для каждого
+            # seed'а — это исчерпало квоту API и обрушило "инвалиды"/"сво"
+            # до пустых карточек-заглушек (см. IMPROVEMENT_BACKLOG.md L011,
+            # ANALYST 2026-08-13). Возвращаем триггер к изначальному объёму.
+            is_cntd = "cntd.ru" in urlparse(url).netloc if url else False
+            no_relevant_content = (
+                is_cntd and not too_short and not has_relevant_content(source_text, name)
+            )
             if too_short or no_relevant_content:
                 if too_short:
                     reason = f"текст короткий ({len(source_text)} симв.)"
