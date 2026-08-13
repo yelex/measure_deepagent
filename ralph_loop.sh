@@ -13,6 +13,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 MAX_ITERATIONS="${MAX_ITERATIONS:-20}"        # жёсткий предохранитель
 PACE_SECONDS="${PACE_SECONDS:-30}"            # пауза между итерациями
 PLATEAU_WINDOW="${PLATEAU_WINDOW:-5}"         # N итераций без улучшений -> стоп
+ANALYST_EVERY_N="${ANALYST_EVERY_N:-5}"        # раз в N циклов запускать Analyst
 TUNING_LOG="data/output/tuning_log.jsonl"
 PLATEAU_STATE="data/output/ralph_runs/plateau_state.jsonl"  # gitignored, регенерируемый
 LOG_DIR="data/output/ralph_runs"
@@ -124,23 +125,48 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     exit 1
   fi
 
-  # --permission-mode acceptEdits: локальные Edit/Write не блокируются
-  # интерактивным подтверждением (цикл автономный), но deny-правила из
-  # .claude/settings.json (golden xlsx, scorer, append-only логи)
-  # применяются независимо от режима — это НЕ bypassPermissions.
-  claude -p "$(cat RALPH_PROMPT.md)" --permission-mode acceptEdits \
-      > "$LOG_DIR/iteration_${i}_${ts}.log" 2>&1 || {
-    echo "!!! claude -p завершился с ошибкой на итерации $i — смотри $LOG_DIR/iteration_${i}_${ts}.log"
+  # --- Coder pass ---
+  claude -p "$(cat RALPH_PROMPT_CODER.md)" --permission-mode acceptEdits \
+      > "$LOG_DIR/iteration_${i}_coder_${ts}.log" 2>&1 || {
+    echo "!!! Coder завершился с ошибкой на итерации $i — смотри $LOG_DIR/iteration_${i}_coder_${ts}.log"
     exit 1
   }
 
-  # Auto-commit: если claude -p оставил грязный tree (не успел закоммитить
-  # внутри итерации), сохраняем правки чтобы следующая итерация стартовала
-  # чисто. Сорим временные файлы — удаляем.
+  # Auto-commit after Coder pass
   git clean -fd -- data/output/tmp_ data/output/ralph_iteration_ 2>/dev/null || true
   if [[ -n "$(git status --porcelain)" ]]; then
-    git add -A && git commit -m "ralph: auto-commit after iteration $i (uncommitted changes)" 2>/dev/null || true
-    echo "(auto-committed uncommitted changes after iteration $i)"
+    git add -A && git commit -m "ralph: auto-commit after coder iteration $i" 2>/dev/null || true
+    echo "(auto-committed uncommitted changes after coder pass $i)"
+  fi
+
+  # --- Tester pass (обязателен сразу после Coder) ---
+  claude -p "$(cat RALPH_PROMPT_TESTER.md)" --permission-mode acceptEdits \
+      > "$LOG_DIR/iteration_${i}_tester_${ts}.log" 2>&1 || {
+    echo "!!! Tester завершился с ошибкой на итерации $i — смотри $LOG_DIR/iteration_${i}_tester_${ts}.log"
+    exit 1
+  }
+
+  # Auto-commit after Tester pass
+  git clean -fd -- data/output/tmp_ data/output/ralph_iteration_ 2>/dev/null || true
+  if [[ -n "$(git status --porcelain)" ]]; then
+    git add -A && git commit -m "ralph: auto-commit after tester iteration $i" 2>/dev/null || true
+    echo "(auto-committed uncommitted changes after tester pass $i)"
+  fi
+
+  # --- Analyst pass (раз в ANALYST_EVERY_N циклов) ---
+  if (( i % ANALYST_EVERY_N == 0 )); then
+    claude -p "$(cat RALPH_PROMPT_ANALYST.md)" --permission-mode acceptEdits \
+        > "$LOG_DIR/iteration_${i}_analyst_${ts}.log" 2>&1 || {
+      echo "!!! Analyst завершился с ошибкой на итерации $i — смотри $LOG_DIR/iteration_${i}_analyst_${ts}.log"
+      exit 1
+    }
+
+    # Auto-commit after Analyst pass
+    git clean -fd -- data/output/tmp_ data/output/ralph_iteration_ 2>/dev/null || true
+    if [[ -n "$(git status --porcelain)" ]]; then
+      git add -A && git commit -m "ralph: auto-commit after analyst iteration $i" 2>/dev/null || true
+      echo "(auto-committed uncommitted changes after analyst pass $i)"
+    fi
   fi
 
   read -r avg_qs perfect recall precision <<< "$(read_latest_metrics)"
