@@ -724,3 +724,72 @@ run-to-run вариативность GLM, а не деградацию/улуч
   если условия меры не различают группу инвалидности, значение нужно
   продублировать во все 4 групповых поля (как это делает golden).
 - Критерий успеха: сумма-ошибки для "инвалиды" падают с 16/21.
+
+## [ANALYST 2026-08-13] Backlog revision после миграции GigaChat
+
+Источник: Claude analysis (через claude -p), обзор backlog с учётом
+провайдера GigaChat-2-Max + установленного deepagents-gigachat.
+
+### Приоритеты (обновлённые):
+
+```
+P0  L014 — фикс сломанного run_pipeline_demo.py (DONE)
+P0  re-baseline на GigaChat — чистый batch + tuning_log с пометкой
+P1  L005 — расширение seed-реестра (Recall ceiling 0.86)
+P1  L013 — переформулировать: GigaChat quota handling (не GLM)
+P2  L010 — category static lookup
+P2  L012 — sum root-cause action plan
+P2  L015 — harden GigaChat grounding relaxation
+P3  L004 — deepagents-gigachat harness (ReAct loop)
+hold L007 — swarm
+```
+
+## [L014] Фикс IndentationError в run_pipeline_demo.py
+
+- Статус: done
+- Приоритет: **blocker** (без этого никакой batch невозможен)
+- Источник: коммит `f3cd83d` (миграция на GigaChat) сломал обработку
+  quota-исключений — `except (GLMQuotaExceededError, Exception)` с
+  вложенным `if` безbody. Скрипт не компилировался.
+- Фикс: перезаписан quota-handler, ловит `(GLMQuotaExceededError,
+  GigaChatQuotaExceededError)` явно, без вложенного if.
+
+## [L015] Harden GigaChat grounding relaxation
+
+- Статус: todo
+- Приоритет: medium
+- Источник: коммит `f3cd83d` ослабил grounding check: если GigaChat
+  возвращает `{"value": "..."}` без `quote`, value принимается без
+  любой проверки (grounded = True при quote is None). Это anti-
+  hallucination safety net на нуле для нового провайдера.
+- Действие: добавить fallback — если quote отсутствует, проверять
+  что value (или его нормализованная подстрока) присутствует в
+  source text. Не блокирующее совпадение (как _quote_grounded), а
+  мягкая проверка.
+- Контекст: история с cbb644c (scorer смягчён) показывает что любые
+  relaxation checks должны быть явными и документированными.
+
+## [L013] Переформулировать: provider quota/rate-limit handling
+
+- Статус: **todo (переформулировано)**
+- Приоритет: high (был critical для GLM, остаётся high для GigaChat)
+- Источник: L013 как реализовано — GLM-специфичный (string-matching
+  "Usage limit"/code 1308). GigaChat теперь default провайдер, его
+  quota/rate-limit формат ошибок не исследован. Текочный guard в
+  gigachat_extract.py (`"429" in str(e)`) — непроверенная догадка.
+- Действие: протестировать реальный GigaChat 429/Quota ответ,
+  обновить GigaChatQuotaExceededError детектирование под реальный
+  формат.
+
+## [L004] Переформулировать: deepagents-gigachat harness
+
+- Статус: todo (переформулировано)
+- Приоритет: medium → повышается до high после L005/L010
+- Источник: раньше блокирован на "glm-5 agent loop hangs >3min".
+  Теперь GigaChat-2-Max + deepagents-gigachat HarnessProfile —
+  другая latency/tool-calling профиль. Вопрос: работает ли
+  GigaChat-2-Max внутри full deepagents ReAct loop (multi-tool:
+  search → fetch → extract)?
+- Бонус: рабочий ReAct loop может помочь L005 — агент сможет сам
+  находить НПА вместо ручного добавления seed'ов.
+- Зависимости: langchain_gigachat + deepagents-gigachat установлены.

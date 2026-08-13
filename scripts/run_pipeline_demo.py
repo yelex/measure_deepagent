@@ -137,16 +137,12 @@ def run_llm_mode():
 
             try:
                 card = extract_measure_via_llm(seed, texts, ls, provider="gigachat")
-            except (GLMQuotaExceededError, Exception) as e:
-                # GigaChatQuotaExceededError тоже ловится здесь (наследуется от Exception)
-                if "429" in str(e) or "quota" in str(e).lower() or "GLMQuota" in type(e).__name__ or "GigaChatQuota" in type(e).__name__:
-                # L013: 5-часовое окно GLM исчерпано — retry внутри
-                # _call_glm_structured уже бесполезен. Останавливаем batch
+            except (GLMQuotaExceededError, GigaChatQuotaExceededError) as e:
+                # Quota исчерпана (GLM 5h window или GigaChat rate-limit) —
+                # retry внутри провайдера уже бесполезен. Останавливаем batch
                 # целиком, а не пишем карточки-заглушки для всех
-                # необработанных мер (то, что молча произошло 2026-08-12 и
-                # было принято за регрессию экстрактора, см.
-                # IMPROVEMENT_BACKLOG.md L011/L013).
-                print(f"    ОСТАНОВКА BATCH: квота GLM исчерпана — {e}", flush=True)
+                # необработанных мер.
+                print(f"    ОСТАНОВКА BATCH: квота LLM исчерпана — {e}", flush=True)
                 quota_exceeded = True
                 break
             except Exception as e:
