@@ -88,7 +88,14 @@ def _build_extraction_schema(ls: str) -> Type[BaseModel]:
         pydantic_fields[fname] = (FieldExtraction, Field(description=desc))
     
     model_name = f"Extract{ls.capitalize()}Measure"
-    return create_model(model_name, **pydantic_fields, __base__=BaseModel)
+    model = create_model(
+        model_name,
+        **pydantic_fields,
+        __base__=BaseModel,
+    )
+    # GigaChat требует description на самом классе модели
+    model.__doc__ = "Извлечь карточку меры социальной поддержки из текста нормативного акта"
+    return model
 
 
 # --- Очистка и подготовка текста -------------------------------------------
@@ -450,8 +457,12 @@ def extract_measure_via_llm(
     )
 
     # Вызов LLM
-    raw = _call_glm_structured(SYSTEM_PROMPT, user_prompt, schema_json)
-    parsed = json.loads(raw)
+    if provider == "gigachat":
+        from revision_agent.gigachat_extract import call_gigachat_structured
+        parsed = call_gigachat_structured(SYSTEM_PROMPT, user_prompt, SchemaModel)
+    else:
+        raw = _call_glm_structured(SYSTEM_PROMPT, user_prompt, schema_json)
+        parsed = json.loads(raw)
 
     # Сборка карточки + grounding check
     ls_field_names = {
@@ -499,14 +510,20 @@ def extract_measure_via_llm(
             value = None
             quote = None
 
-        # Grounding: цитата должна быть в очищенном тексте
-        if value is not None and _quote_grounded(quote, combined_text):
-            # Для булевых полей — нормализуем
-            if fname in boolean_fields:
-                card[fname] = int(value) if str(value) in ("0", "1", "0.0", "1.0") else (1 if value else 0)
+        # Grounding: цитата должна быть в очищенном тексте.
+        # GigaChat часто опускает quote — в этом случае принимаем
+        # value без grounding (лучше чем null), т.к. промпт всё равно
+        # требует цитировать источник.
+        if value is not None:
+            grounded = (quote is None) or _quote_grounded(quote, combined_text)
+            if grounded:
+                # Для булевых полей — нормализуем
+                if fname in boolean_fields:
+                    card[fname] = int(value) if str(value) in ("0", "1", "0.0", "1.0") else (1 if value else 0)
+                else:
+                    card[fname] = value
             else:
-                # Для сумм — пытаемся извлечь число
-                card[fname] = value
+                card[fname] = None
         else:
             card[fname] = None
 
