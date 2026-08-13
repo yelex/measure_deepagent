@@ -46,11 +46,16 @@ reasoning-поля + grounding check.
 
 ## 4. Прогони eval
 
+**КРИТИЧЕСКИ ВАЖНО:** Eval выполняется **синхронно**. Не запускай его
+в фоне, не делай `&`, не планировал check-in — запусти и **жди
+завершения процесса** в том же сеансе. Batch eval (~15 минут на 43
+seed'а) — это нормально, не пытайся его ускорить или обойти.
+
 ```bash
-# Генерация карточек через LLM-экстрактор
+# Генерация карточек через LLM-экстрактор (блокирует до завершения)
 python3 scripts/run_pipeline_demo.py --llm-mode
 
-# Score
+# Score (блокирует до завершения)
 python3 scripts/score_against_golden.py \
     --agent-export data/output/agent_cards_export.json \
     --note "<task-id>: описание"
@@ -65,6 +70,11 @@ python3 scripts/score_against_golden.py \
 черновой (`wip:`), его подтвердит или откатит независимый Tester-проход.
 Не пытайся спрогнозировать его решение и не пиши в `tuning_log.jsonl`
 сам — это делает Tester.
+
+**НЕ завершай работу, пока eval полностью не закончит считать и ты не
+запишешь `ralph_handoff.json`.** Если eval ещё считается — жди. Если
+он упал с ошибкой — зафиксируй это в handoff с `"status": "eval_failed"`
+и завершись.
 
 После прогона eval:
 
