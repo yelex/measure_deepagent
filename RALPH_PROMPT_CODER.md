@@ -44,60 +44,22 @@ reasoning-поля + grounding check.
   `tuning_log.jsonl`, `review_queue.json`.
 - **Не используй regex-экстракторы из pipeline.py.**
 
-## 4. Прогони eval
+## 4. Закоммити изменение
 
-**КРИТИЧЕСКИ ВАЖНО:** Eval выполняется **синхронно**. Не запускай его
-в фоне, не делай `&`, не планировал check-in — запусти и **жди
-завершения процесса** в том же сеансе. Batch eval (~15 минут на 43
-seed'а) — это нормально, не пытайся его ускорить или обойти.
+Закоммить изменение с сообщением `wip(<task-id>): <краткое описание>`.
+Даже если не уверен в результате — Tester сам решит revert или нет;
+Coder не имеет права молча откатывать.
 
-```bash
-# Генерация карточек через LLM-экстрактор (блокирует до завершения)
-python3 scripts/run_pipeline_demo.py --llm-mode
+**НЕ запускай eval сам.** Eval (~15 минут на 43 seed'а) выполняется
+слишком долго для одного вызова Bash tool (лимит 10 минут). Поэтому
+`ralph_loop.sh` запускает eval **синхронно** между твоим проходом и
+Tester'ом. Твоя работа — только написать код и закоммитить `wip:`.
 
-# Score (блокирует до завершения)
-python3 scripts/score_against_golden.py \
-    --agent-export data/output/agent_cards_export.json \
-    --note "<task-id>: описание"
-```
+Не пиши в `tuning_log.jsonl` и не создавай `ralph_handoff.json` — это
+делает `ralph_loop.sh`, а не ты.
 
-Если `run_pipeline_demo.py` ещё не поддерживает `--llm-mode`, добавь это
-в рамках задачи L002 (используй `agent/pipeline_mode.py` как reference).
-
-## 5. Закоммить и передай результат Tester'у
-
-Ты НЕ принимаешь финальное решение об успехе итерации. Твоя коммит —
-черновой (`wip:`), его подтвердит или откатит независимый Tester-проход.
-Не пытайся спрогнозировать его решение и не пиши в `tuning_log.jsonl`
-сам — это делает Tester.
-
-**НЕ завершай работу, пока eval полностью не закончит считать и ты не
-запишешь `ralph_handoff.json`.** Если eval ещё считается — жди. Если
-он упал с ошибкой — зафиксируй это в handoff с `"status": "eval_failed"`
-и завершись.
-
-После прогона eval:
-
-1. Закоммить изменение с сообщением `wip(<task-id>): <краткое описание>`.
-   Даже если результат хуже baseline — Tester сам решит revert или нет;
-   Coder не имеет права молча откатывать.
-
-2. Запиши в `data/output/ralph_handoff.json` (перезаписать файл,
-   не append) JSON вида:
-   ```json
-   {
-     "task_id": "<L0NN>",
-     "commit_sha": "<git rev-parse HEAD>",
-     "baseline_metrics": {"average_qs": ..., "recall": ..., "precision": ..., "perfect_rate": ...},
-     "new_metrics": {"average_qs": ..., "recall": ..., "precision": ..., "perfect_rate": ...},
-     "hypothesis": "<текст гипотезы>",
-     "files_changed": ["<список файлов из git diff --name-only HEAD~1>"],
-     "status": "awaiting_tester"
-   }
-   ```
-
-3. Не трогай `IMPROVEMENT_BACKLOG.md` статус задачи — финальный статус
-   (`done`/`reverted`/`blocked`) выставляет Tester, не Coder.
+Не трогай `IMPROVEMENT_BACKLOG.md` статус задачи — финальный статус
+(`done`/`reverted`/`blocked`) выставляет Tester, не Coder.
 
 ## 6. Жёсткие ограничения
 

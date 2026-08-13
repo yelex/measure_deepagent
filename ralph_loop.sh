@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Ralph loop для self-improvement revision_agent.
 # Каждая итерация — свежий контекст (новый процесс claude -p), вся
-# преемственность через файлы (git, IMPROVEMENT_BACKLOG.md, tuning_log.jsonl)
-# — см. RALPH_PROMPT.md. Этот скрипт НЕ прогоняет eval сам — это делает
-# агент внутри итерации (RALPH_PROMPT.md, п.4); скрипт только читает
-# результат из data/output/tuning_log.jsonl после каждой итерации, чтобы
-# решить, продолжать ли цикл.
+# преемственность через файлы (git, IMPROVEMENT_BACKLOG.md, tuning_log.jsonl).
+#
+# Eval выполняется самим скриптом (не агентом), потому что Claude Code
+# Bash tool имеет таймаут ~10 минут, а batch eval на 43 seed'а занимает
+# ~15 минут. Coder только пишет код и коммитит wip:, скрипт гоняет eval
+# синхронно и генерирует ralph_handoff.json, Tester проверяет результат.
 
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -139,7 +140,64 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     echo "(auto-committed uncommitted changes after coder pass $i)"
   fi
 
-  # --- Tester pass (обязателен сразу после Coder) ---
+  # --- Eval pass (синхронно, в самом скрипте — не внутри claude -p) ---
+  # Coder не запускает eval сам (Bash tool лимит 10 мин, eval ~15 мин).
+  # Скрипт делает это сам и генерирует ralph_handoff.json для Tester'а.
+
+  # Сохраняем baseline метрики (последняя запись до eval)
+  BASELINE_METRICS="$(read_latest_metrics)"
+
+  echo "--- Eval: запуск run_pipeline_demo.py --llm-mode ---"
+  python3 scripts/run_pipeline_demo.py --llm-mode 2>&1 | tail -50 || {
+    echo "!!! run_pipeline_demo.py упал на итерации $i"
+    exit 1
+  }
+
+  echo "--- Eval: запуск score_against_golden.py ---"
+  python3 scripts/score_against_golden.py \
+      --agent-export data/output/agent_cards_export.json \
+      --note "ralph-loop: eval после coder pass $i" 2>&1 | tail -50 || {
+    echo "!!! score_against_golden.py упал на итерации $i"
+    exit 1
+  }
+
+  # Auto-commit после eval (новые карточки, лог)
+  git clean -fd -- data/output/tmp_ data/output/ralph_iteration_ 2>/dev/null || true
+  if [[ -n "$(git status --porcelain)" ]]; then
+    git add -A && git commit -m "ralph: auto-commit after eval iteration $i" 2>/dev/null || true
+    echo "(auto-committed eval output after iteration $i)"
+  fi
+
+  # Генерируем ralph_handoff.json из достоверных источников
+  WIP_SHA="$(git rev-parse HEAD)"
+  NEW_METRICS="$(read_latest_metrics)"
+  # Парсим task_id из сообщения последнего wip: коммита Coder'а
+  WIP_MSG="$(git log --oneline -1 --grep='^wip' 2>/dev/null | head -1)"
+  TASK_ID="$(echo "$WIP_MSG" | sed -n 's/.*wip(\([^)]*\)).*/\1/p')"
+  [[ -z "$TASK_ID" ]] && TASK_ID="unknown"
+
+  FILES_CHANGED="$(git diff --name-only HEAD~1..HEAD 2>/dev/null | python3 -c 'import sys,json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+
+  read -r BL_AVG BL_PERF BL_REC BL_PREC <<< "$BASELINE_METRICS"
+  read -r NW_AVG NW_PERF NW_REC NW_PREC <<< "$NEW_METRICS"
+
+  python3 -c "
+import json, sys
+handoff = {
+    'task_id': '$TASK_ID',
+    'commit_sha': '$WIP_SHA',
+    'baseline_metrics': {'average_qs': '$BL_AVG', 'perfect_rate': '$BL_PERF', 'recall': '$BL_REC', 'precision': '$BL_PREC'},
+    'new_metrics': {'average_qs': '$NW_AVG', 'perfect_rate': '$NW_PERF', 'recall': '$NW_REC', 'precision': '$NW_PREC'},
+    'hypothesis': '(see ralph_iteration file and wip commit message)',
+    'files_changed': $FILES_CHANGED,
+    'status': 'awaiting_tester'
+}
+with open('data/output/ralph_handoff.json', 'w') as f:
+    json.dump(handoff, f, indent=2, ensure_ascii=False)
+print('ralph_handoff.json written: task=$TASK_ID commit=${WIP_SHA:0:8}')
+"
+
+  # --- Tester pass (обязателен сразу после eval) ---
   claude -p "$(cat RALPH_PROMPT_TESTER.md)" --permission-mode acceptEdits \
       > "$LOG_DIR/iteration_${i}_tester_${ts}.log" 2>&1 || {
     echo "!!! Tester завершился с ошибкой на итерации $i — смотри $LOG_DIR/iteration_${i}_tester_${ts}.log"

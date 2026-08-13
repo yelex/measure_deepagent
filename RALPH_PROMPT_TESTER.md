@@ -31,21 +31,23 @@
 `data/output/ralph_handoff.json` `"status": "rejected_integrity"` и
 останови итерацию — дальше не проверяй.
 
-## 2. Независимый перезапуск eval
+## 2. Проверка метрик
 
-Не доверяй метрикам из `ralph_handoff.json` — перезапусти сам:
+Eval уже выполнен скриптом `ralph_loop.sh` (не Coder'ом). Метрики в
+`ralph_handoff.json` и последней записи `tuning_log.jsonl` — достоверны,
+посчитаны скриптом синхронно.
 
-```bash
-python3 scripts/run_pipeline_demo.py --llm-mode
-python3 scripts/score_against_golden.py \
-  --agent-export data/output/agent_cards_export.json \
-  --note "tester-verify: <task-id> commit=<commit_sha>"
-```
+Прочитай `new_metrics` и `baseline_metrics` из `ralph_handoff.json`.
+Сравни:
+- AvgQS, Recall, Precision, PerfectRate — лучше/хуже/на уровне baseline?
+- Если хуже — есть ли объяснение в гипотезе Coder'а (wip commit message,
+  ralph_iteration_*.md)?
+- Если метрики упали по одной ЖС, а по другой выросли — это приемлемо
+  или нет (зависит от масштаба регрессии)?
 
-Сравни полученные метрики с `new_metrics` из handoff. Если расхождение
-существенное (не объясняется LLM-стохастикой) — зафиксируй это как
-находку в backlog (не как automatic reject, а как отдельный todo с
-приоритетом high — нестабильность eval сама по себе проблема).
+Если метрики в handoff не совпадают с последней записью `tuning_log.jsonl`
+(расхождение >0.01 по любой метрике) — зафиксируй это как находку в
+backlog (отдельный todo с приоритетом high).
 
 ## 3. Регрессионные проверки
 
