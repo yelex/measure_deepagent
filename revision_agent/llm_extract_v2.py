@@ -240,6 +240,17 @@ _NO_VERIFY_CTX.check_hostname = False
 _NO_VERIFY_CTX.verify_mode = ssl.CERT_NONE
 
 
+class GLMQuotaExceededError(RuntimeError):
+    """GLM вернул HTTP 429 с 5-часовым лимитом использования (L013).
+
+    Отличается от прочих временных ошибок тем, что retry гарантированно
+    бесполезен (окно сбрасывается часами, не секундами) — вызывающий код
+    должен остановить весь оставшийся batch, а не продолжать писать
+    карточки-заглушки для необработанных мер (см. IMPROVEMENT_BACKLOG.md
+    L013 — именно это молча произошло в прогоне 2026-08-12 23:15).
+    """
+
+
 def _call_glm_structured(
     system_prompt: str,
     user_prompt: str,
@@ -313,6 +324,10 @@ def _call_glm_structured(
                 body_text = e.read().decode("utf-8", errors="ignore")[:300]
             except Exception:
                 pass
+            if e.code == 429 and ("Usage limit" in body_text or '"code":"1308"' in body_text):
+                # 5-часовое окно — retry с паузой 3с бессмыслен, не тратим
+                # его впустую и не глушим сигнал под generic HTTP-ошибку.
+                raise GLMQuotaExceededError(f"HTTP 429: {body_text}") from e
             last_err = RuntimeError(f"HTTP {e.code}: {body_text}")
         except (json.JSONDecodeError, KeyError, IndexError) as e:
             last_err = RuntimeError(f"Ошибка парсинга ответа: {e}")

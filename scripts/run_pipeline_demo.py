@@ -58,13 +58,20 @@ def run_llm_mode():
                     _os.environ.setdefault(_k, _v)
 
     from agent.pipeline_mode import fetch_source
-    from revision_agent.llm_extract_v2 import extract_measure_via_llm, has_relevant_content
+    from revision_agent.llm_extract_v2 import (
+        GLMQuotaExceededError,
+        extract_measure_via_llm,
+        has_relevant_content,
+    )
     from revision_agent.npa_fetcher import MIN_TEXT_LENGTH, search_and_fetch_npa
 
     registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
     cards_by_ls = {"вбд": [], "сво": [], "инвалиды": []}
+    quota_exceeded = False
 
     for ls, seeds in registry.items():
+        if quota_exceeded:
+            break
         for seed in seeds:
             name = seed["measureName"]
             url = seed.get("npaUrl", "")
@@ -129,6 +136,16 @@ def run_llm_mode():
 
             try:
                 card = extract_measure_via_llm(seed, texts, ls, provider="glm")
+            except GLMQuotaExceededError as e:
+                # L013: 5-часовое окно GLM исчерпано — retry внутри
+                # _call_glm_structured уже бесполезен. Останавливаем batch
+                # целиком, а не пишем карточки-заглушки для всех
+                # необработанных мер (то, что молча произошло 2026-08-12 и
+                # было принято за регрессию экстрактора, см.
+                # IMPROVEMENT_BACKLOG.md L011/L013).
+                print(f"    ОСТАНОВКА BATCH: квота GLM исчерпана — {e}", flush=True)
+                quota_exceeded = True
+                break
             except Exception as e:
                 print(f"    ОШИБКА LLM: {e}", flush=True)
                 card = {"measureId": None, "region": region, "measureName": name}
@@ -140,6 +157,16 @@ def run_llm_mode():
 
     write_agent_export(cards_by_ls, EXPORT_PATH)
     print(f"Экспорт записан в {EXPORT_PATH}")
+
+    if quota_exceeded:
+        n_done = sum(len(v) for v in cards_by_ls.values())
+        n_total = sum(len(v) for v in registry.values())
+        print(
+            f"batch остановлен квотой GLM: обработано {n_done}/{n_total} карточек, "
+            f"экспорт частичный — eval по нему недостоверен для необработанного остатка",
+            flush=True,
+        )
+        sys.exit(2)
 
 
 def main():
