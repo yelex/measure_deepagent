@@ -733,16 +733,42 @@ run-to-run вариативность GLM, а не деградацию/улуч
 ### Приоритеты (обновлённые):
 
 ```
-P0  L014 — фикс сломанного run_pipeline_demo.py (DONE)
-P0  re-baseline на GigaChat — чистый batch + tuning_log с пометкой
-P1  L005 — расширение seed-реестра (Recall ceiling 0.86)
-P1  L013 — переформулировать: GigaChat quota handling (не GLM)
-P2  L010 — category static lookup
-P2  L012 — sum root-cause action plan
+P1  L010 — category static lookup (сво/инвалиды) — 23 ошибки, крупнейший рычаг
+P1  L016 — промпт-тюнинг measureTerms (paraphrase vs verbatim) — 37/42 ошибок
+P2  L012 — sum root-cause action plan (инвалиды, 19/21 ошибок)
+P2  L005 — расширение seed-реестра (Recall ceiling 0.86)
 P2  L015 — harden GigaChat grounding relaxation
+P3  L013 — GigaChat quota handling
 P3  L004 — deepagents-gigachat harness (ReAct loop)
 hold L007 — swarm
 ```
+
+### GigaChat-2-Max baseline (14.08.2026)
+
+Чистый прогон после L014-фикса. Precision=1.0 (идеальная), фокус на AvgQS.
+
+| Метрика | Значение | Цель |
+|---|---|---|
+| Recall | 0.86 | >= 0.90 |
+| Precision | 1.000 | >= 0.85 |
+| AvgQS | 0.532 | >= 0.90 |
+| PerfectRate | 0.047 | >= 0.70 |
+
+Ошибки по полям:
+- **terms**: вбд 4/5, сво 14/16, инвалиды 19/21 (37/42 всего) — самый массовый
+- **category**: вбд 6/6, сво 6/16, инвалиды 17/21 (29/43 всего)
+- **sum**: инвалиды 19/21, сво 3/4
+- **department**: вбд 5/6
+
+### [ANALYST 2026-08-14] План от Claude (5 итераций)
+
+Источник: Claude (claude -p), анализ backlog + кода + метрик GigaChat baseline.
+
+1. **L010** — category static lookup для сво/инвалиды. Не трогать вбд.
+2. **L016 (new)** — промпт-тюнинг measureTerms: value=paraphrase, quote=verbatim + few-shot.
+3. **L012** — sum-фикс инвалиды: amountsUrl для 8 мер, group-collapse, окно _cut_to_relevant.
+4. **L005** — расширение реестра (7 seed'ов). Единственный путь Recall > 0.86.
+5. **L015** — harden grounding: quote is None → проверять value в source text.
 
 ## [L014] Фикс IndentationError в run_pipeline_demo.py
 
@@ -780,6 +806,22 @@ hold L007 — swarm
 - Действие: протестировать реальный GigaChat 429/Quota ответ,
   обновить GigaChatQuotaExceededError детектирование под реальный
   формат.
+
+## [L016] Промпт-тюнинг measureTerms (paraphrase vs verbatim)
+
+- Статус: todo
+- Приоритет: **high** — terms крупнейший источник ошибок (37/42 по всем ЖС)
+- Источник: Claude analysis (14.08). SYSTEM_PROMPT требует verbatim для всех
+  полей. Но golden — сжатый пересказ условия, не дословная цитата. LLM
+  цитирует НПА дословно → scorer матчит плохо.
+- Действие:
+  1. Разделить правило в SYSTEM_PROMPT: `quote` остаётся verbatim (для
+     grounding), `value` для `measureTerms` — краткая переформулировка
+     условия в стиле golden.
+  2. Добавить 2-3 few-shot примера golden-style для measureTerms.
+  3. Не трогать другие поля — только measureTerms.
+- Критерий успеха: terms-errors падают хотя бы на 30% (с 37/42 до ~25/42).
+- Риск: content-level изменение, сложнее оценить эффект до прогона.
 
 ## [L004] Переформулировать: deepagents-gigachat harness
 
