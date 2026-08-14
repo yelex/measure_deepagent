@@ -18,8 +18,21 @@ ANALYST_EVERY_N="${ANALYST_EVERY_N:-5}"        # раз в N циклов зап
 TUNING_LOG="data/output/tuning_log.jsonl"
 PLATEAU_STATE="data/output/ralph_runs/plateau_state.jsonl"  # gitignored, регенерируемый
 LOG_DIR="data/output/ralph_runs"
+LOCK_FILE="$LOG_DIR/ralph_loop.lock"
 mkdir -p "$LOG_DIR"
 touch "$PLATEAU_STATE"
+
+# Single-flight guard (L017): ни один шаг цикла (Coder/eval/Tester/Analyst)
+# не должен выполняться параллельно двумя запущенными ralph_loop.sh —
+# наблюдались гонки за llm_extract_v2.py, ralph_handoff.json и tuning_log.jsonl.
+# flock — advisory lock через файловый дескриптор, не touch-файл: ядро сам
+# освобождает лок, если процесс-держатель падает/убит, поэтому не может
+# зависнуть навсегда так, как обычный lock-файл без владельца.
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+  echo "!!! ralph_loop.sh уже выполняется (lock: $LOCK_FILE) — выхожу, чтобы не конфликтовать" >&2
+  exit 1
+fi
 
 # Цели из "Методика и критерии оценки качества извлечения данных" (§3-4):
 TARGET_AVG_QS=0.90
