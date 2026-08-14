@@ -60,9 +60,11 @@ def run_llm_mode():
     from agent.pipeline_mode import fetch_source
     from revision_agent.llm_extract_v2 import (
         GLMQuotaExceededError,
+        enable_traces,
         extract_measure_via_llm,
         has_relevant_content,
     )
+    enable_traces("data/output/traces")
     from revision_agent.gigachat_extract import GigaChatQuotaExceededError
     from revision_agent.npa_fetcher import MIN_TEXT_LENGTH, search_and_fetch_npa
 

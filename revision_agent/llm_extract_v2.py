@@ -19,6 +19,7 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+from pathlib import Path
 from typing import Optional, Type
 
 from pydantic import BaseModel, Field, create_model
@@ -609,6 +610,49 @@ def _lookup_category(ls: str, measure_name: str) -> Optional[dict]:
 
 # --- Главная функция извлечения --------------------------------------------
 
+TRACE_DIR = None  # устанавливается через enable_traces()
+
+
+def enable_traces(trace_dir: str | None = "data/output/traces"):
+    """Включить сохранение трейсов в указанную директорию.
+    Передать None чтобы отключить.
+    """
+    global TRACE_DIR
+    TRACE_DIR = trace_dir
+    if trace_dir:
+        Path(trace_dir).mkdir(parents=True, exist_ok=True)
+
+
+def _save_trace(
+    seed: dict,
+    ls: str,
+    clean_texts: dict,
+    user_prompt: str,
+    parsed: dict,
+    card: dict,
+    overrides: dict,
+):
+    """Сохранить трейс выполнения для одной меры."""
+    if not TRACE_DIR:
+        return
+    import datetime
+    measure_id = seed.get("measureId") or seed.get("measureName", "unknown").replace(" ", "_")[:60]
+    ts = datetime.datetime.now().strftime("%Y%m%dT%H%M%SZ")
+    trace_path = Path(TRACE_DIR) / ls / f"{measure_id}.json"
+    trace_path.parent.mkdir(parents=True, exist_ok=True)
+    trace = {
+        "timestamp": ts,
+        "seed": seed,
+        "ls": ls,
+        "source_texts": {k: v[:2000] + "..." if len(v) > 2000 else v for k, v in clean_texts.items()},
+        "user_prompt": user_prompt[:3000] + "..." if len(user_prompt) > 3000 else user_prompt,
+        "llm_raw_parsed": parsed,
+        "post_llm_overrides": overrides,
+        "final_card": card,
+    }
+    trace_path.write_text(json.dumps(trace, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+
+
 def extract_measure_via_llm(
     seed: dict,
     texts: dict,
@@ -724,9 +768,20 @@ def extract_measure_via_llm(
         if looked_up is not None:
             card["department"] = looked_up
 
+    overrides = {}
+
+    if "department" in card:
+        looked_up = _lookup_department(ls, seed["measureName"], card["region"])
+        if looked_up is not None:
+            card["department"] = looked_up
+            overrides["department_lookup"] = looked_up
+
     category_override = _lookup_category(ls, seed["measureName"])
     if category_override:
         for fname, value in category_override.items():
             card[fname] = value
+        overrides["category_lookup"] = category_override
+
+    _save_trace(seed, ls, clean_texts, user_prompt, parsed, card, overrides)
 
     return card
