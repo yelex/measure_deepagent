@@ -4,11 +4,21 @@
       "measureId": null,
       "region": "Москва",
       "measureName": "Бесплатный проезд на аэроэкспрессе",
-      "categoryOfVeteran": "Бывшие несовершеннолетние узники фашизма, участники Великой Отечественной войны, ветераны боевых действий из числа лиц, указанных в пп. 1-4 п. 1 ст. 3 Федерального закона \\\"О ветеранах\\\", лица, награжденные знаком \\\"Жителю блокадного Ленинграда\\\", \\\"Житель осажденного Севастополя\\\", \\\"Житель осажденного Сталинграда\\\"",
-      "measureSum": "null",
-      "measurePeriodicity": "null",
-      "measureTerms": "Для проезда необходимо оформить безденежный проездной документ.",
+      "categoryOfVeteran": null,
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": "Оформляется безденежный проездной документ.",
       "department": "Аэроэкспресс"
+    },
+    {
+      "measureId": null,
+      "region": "Москва",
+      "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
+      "categoryOfVeteran": "Инвалиды Великой Отечественной войны и инвалиды боевых действий",
+      "measureSum": null,
+      "measurePeriodicity": null,
+      "measureTerms": "Категории граждан, проживающие в Московской области, имеют право на бесплатный проезд в Москве на общественном транспорте.",
+      "department": null
     },
     {
       "measureId": null,
@@ -16,49 +26,39 @@
       "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
       "categoryOfVeteran": "дети войны",
       "measureSum": "null",
-      "measurePeriodicity": "null",
-      "measureTerms": "право на бесплатный проезд в городе Москве на всех видах городского пассажирского транспорта (кроме такси и маршрутного такси",
+      "measurePeriodicity": "бессрочно",
+      "measureTerms": "Бесплатный проезд на всех видах городского пассажирского транспорта в городе Москве (кроме такси и маршрутного такси) для детей войны",
       "department": "город Москва"
     },
     {
       "measureId": null,
       "region": "Москва",
       "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
-      "categoryOfVeteran": "инвалиды Великой Отечественной войны и инвалиды боевых действий",
-      "measureSum": null,
-      "measurePeriodicity": null,
-      "measureTerms": "по социальной карте жителя Московской области",
-      "department": null
-    },
-    {
-      "measureId": null,
-      "region": "Москва",
-      "measureName": "Бесплатный проезд на всех видах городского пассажирского транспорта",
-      "categoryOfVeteran": null,
-      "measureSum": null,
-      "measurePeriodicity": null,
-      "measureTerms": "наличие места жительства в Московской области",
-      "department": null
+      "categoryOfVeteran": "Жители блокадного Ленинграда (ЖС: вбд)",
+      "measureSum": "null",
+      "measurePeriodicity": "null",
+      "measureTerms": "Жители блокадного Ленинграда имеют право на бесплатный проезд на всех видах городского пассажирского транспорта.",
+      "department": "Москва"
     },
     {
       "measureId": null,
       "region": "Москва",
       "measureName": "Бесплатное изготовление и ремонт зубных протезов",
-      "categoryOfVeteran": "жители города Москвы, достигшие возраста 55 лет для женщин и 60 лет для мужчин, имеющие страховой стаж, необходимый для назначения страховой пенсии по старости",
+      "categoryOfVeteran": "жители города Москвы",
       "measureSum": "null",
       "measurePeriodicity": "null",
-      "measureTerms": "бесплатное изготовление и ремонт зубных протезов (кроме расходов на оплату стоимости драгоценных металлов и металлокерамики",
-      "department": "Правительство Москвы"
+      "measureTerms": "Жителям города Москвы предоставляется бесплатное изготовление и ремонт зубных протезов.",
+      "department": "null"
     },
     {
       "measureId": null,
       "region": "Москва",
       "measureName": "Компенсационная выплата за газификацию",
-      "categoryOfVeteran": "член семьи участника специальной военной операции (СВО)",
+      "categoryOfVeteran": null,
       "measureSum": null,
-      "measurePeriodicity": "единовременная",
-      "measureTerms": "одному члену семьи",
-      "department": "Правительство Москвы"
+      "measurePeriodicity": null,
+      "measureTerms": null,
+      "department": null
     }
   ],
   "сво": [
@@ -71,7 +71,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "обучающимся по очной форме обучения по образовательным программам среднего профессионального образования",
+      "measureTerms": "Студентам колледжей, обучающимся очно по программам СПО, предоставляется бесплатное горячее питание один раз в день.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -84,9 +84,9 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "начиная с 1 марта 2023 г.",
+      "measureTerms": "Бесплатное двухразовое горячее питание (завтрак, обед) детям 1-11 классов в государственных и муниципальных образовательных организациях Москвы. Предоставляется семьям военнослужащих и добровольцев, выполняющих задачи в ходе специальной военной операции.",
       "department": "Единый центр поддержки участников СВО и их семей",
-      "measurePeriodicity": "null"
+      "measurePeriodicity": "ежедневное"
     },
     {
       "measureId": null,
@@ -97,7 +97,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "во внеочередном порядке детей по достижении ими возраста полутора лет",
+      "measureTerms": "Дети участников СВО в возрасте 1,5 лет зачисляются в детский сад во внеочередном порядке",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -110,9 +110,9 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "начиная с 1 марта 2023 г.",
+      "measureTerms": "Дети военнослужащих и добровольцев освобождаются от платы за присмотр и уход в детском саду.",
       "department": "Единый центр поддержки участников СВО и их семей",
-      "measurePeriodicity": "null"
+      "measurePeriodicity": "ежемесячно"
     },
     {
       "measureId": null,
@@ -123,7 +123,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "родители (законные представители) могут выбрать другую принимающую организацию, если отказываются от предложенной; возможен перевод в частные принимающие организации",
+      "measureTerms": "Родители могут перевести ребенка в другой детский сад или школу при прекращении деятельности прежней образовательной организации, аннулировании или приостановке её лицензии.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -136,7 +136,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "начиная с 1 марта 2023 г.",
+      "measureTerms": "Дети военнослужащих и добровольцев 1-6 классов зачисляются в группы продлённого дня и освобождаются от оплаты за присмотр и уход.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -149,7 +149,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "начиная с 1 марта 2023 г.",
+      "measureTerms": "Дети военнослужащих и добровольцев имеют право на бесплатное посещение кружков и секций в государственных и муниципальных образовательных организациях Москвы.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -162,7 +162,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "признанных в установленном порядке нуждающимися в социальном обслуживании независимо от состава семьи и без учета уровня доходов семьи",
+      "measureTerms": "Члены семей участников СВО, признанные нуждающимися в социальном обслуживании, получают социальные услуги на дому независимо от состава семьи и уровня доходов.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -175,7 +175,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "военнослужащим и гражданам, пребывающим в добровольческих формированиях, предоставляется организация профессионального обучения и дополнительного профессионального образования супругам и детям трудоспособного возраста",
+      "measureTerms": "Организация профессионального обучения и дополнительного профессионального образования супруги и детей трудоспособного возраста военнослужащих и добровольцев, участвующих в специальной военной операции.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -188,7 +188,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 1,
       "measureSum": "null",
-      "measureTerms": "Семьи военнослужащих и граждан, пребывающих в добровольческих формированиях.",
+      "measureTerms": "Семьи военнослужащих и добровольцев, выполняющих задачи в ходе специальной военной операции, получают психологическую помощь.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -201,7 +201,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 0,
       "measureSum": "null",
-      "measureTerms": "Семьи военнослужащих и граждан, пребывающих в добровольческих формированиях.",
+      "measureTerms": "Семьи военнослужащих и добровольцев, выполняющих задачи в ходе специальной военной операции, получают бесплатную юридическую помощь.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -214,7 +214,7 @@
       "categoryVolunteer": 1,
       "kidsOfMilitary": 0,
       "measureSum": "null",
-      "measureTerms": "Семьи военнослужащих и граждан, пребывающих в добровольческих формированиях.",
+      "measureTerms": "Семьи военнослужащих и добровольцев, выполняющих задачи в ходе специальной военной операции, получают карьерное консультирование и профориентацию. Семьи военнослужащих, заключивших контракт с Федеральной службой войск национальной гвардии Российской Федерации, также получают эти меры при условии наличия у военнослужащего, супруги и детей места жительства в городе Москве. Семьи погибших или ставших инвалидами военнослужащих получают меры независимо от места жительства.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "null"
     },
@@ -227,7 +227,7 @@
       "categoryVolunteer": 0,
       "kidsOfMilitary": 0,
       "measureSum": "1 900 000,00",
-      "measureTerms": "заключение контракта сроком на 1 год и более",
+      "measureTerms": "Единовременная выплата при заключении контракта сроком на 1 год и более. Воинская часть должна быть установлена в соответствии с заданием Министерства обороны РФ.",
       "department": "Единый центр поддержки участников СВО и их семей",
       "measurePeriodicity": "единовременная"
     },
@@ -239,10 +239,10 @@
       "categoryContractor": 1,
       "categoryVolunteer": 0,
       "kidsOfMilitary": 0,
-      "measureSum": "50000",
-      "measureTerms": "включен руководством военного комиссариата в списочный состав для осуществления выплат; выполняет задачи в ходе СВО",
+      "measureSum": "50 000,00",
+      "measureTerms": "Включен руководством военного комиссариата в списочный состав для осуществления выплат и выполняет задачи в ходе СВО.",
       "department": "Единый центр поддержки участников СВО и их семей",
-      "measurePeriodicity": "ежемесячно"
+      "measurePeriodicity": "ежемесячная"
     },
     {
       "measureId": null,
@@ -252,8 +252,8 @@
       "categoryContractor": 1,
       "categoryVolunteer": 1,
       "kidsOfMilitary": 0,
-      "measureSum": "до 114000 рублей за покупку оборудования, до 84000 рублей за подключение к сетям газоснабжения",
-      "measureTerms": "одному члену семьи",
+      "measureSum": "114 000,00 руб. за покупку оборудования; 84 000,00 руб. за подключение к сетям газоснабжения",
+      "measureTerms": "Компенсационная выплата за газификацию предоставляется одному члену семьи. Максимальная сумма: 114 000 руб. за покупку оборудования и 84 000 руб. за подключение к сетям газоснабжения.",
       "department": "Социальное казначейство города Москвы",
       "measurePeriodicity": "единовременная"
     },
@@ -265,10 +265,10 @@
       "categoryContractor": 1,
       "categoryVolunteer": 0,
       "kidsOfMilitary": 0,
-      "measureSum": "3000000,1000000,92081.55,1000000,500000,100000",
-      "measureTerms": "получил увечье (ранение, травма, контузию) при выполнении задач в ходе специальной военной операции",
+      "measureSum": "1000000 руб. (федеральная), 500000 руб. (региональная)",
+      "measureTerms": "Военнослужащие, получившие увечье (ранение, травма, контузия) при выполнении задач в ходе СВО. Выплата назначается автоматически при наличии справки о ранении. Для региональной выплаты необходимо собрать пакет документов и подать заявление в Единый центр поддержки или МФЦ Москвы.",
       "department": "Единый центр поддержки участников СВО и их семей",
-      "measurePeriodicity": "единовременно"
+      "measurePeriodicity": "Единовременная"
     }
   ],
   "инвалиды": [
@@ -283,10 +283,10 @@
       "measure_first_group": "null",
       "measure_second_group": "null",
       "measure_third_group": "null",
-      "measure_disabled_child": null,
-      "measureTerms": "Денежный доход гражданина не должен превышать одного миллиона восьмисот тысяч рублей в год.",
+      "measure_disabled_child": "1328",
+      "measureTerms": "Выплачивается ежемесячно лицу, занятому уходом за ребенком-инвалидом или инвалидом с детства в возрасте до 23 лет.",
       "department": "Департамент труда и социальной защиты населения Москвы",
-      "measurePeriodicity": null
+      "measurePeriodicity": "Ежемесячно"
     },
     {
       "measureId": null,
@@ -300,7 +300,7 @@
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "1328",
-      "measureTerms": "ребенок-инвалид или инвалид с детства до 23 лет, потерявший кормильца",
+      "measureTerms": "Дети-инвалиды и инвалиды с детства до 23 лет, потерявшие кормильца, получают ежемесячную компенсацию. Предоставляется единственному родителю, опекуну или самому инвалиду, если умерли оба родителя или единственный родитель. Также братья, сестры, внуки умершего кормильца, являющиеся детьми-инвалидами или инвалидами с детства до 23 лет, получающие пенсию по случаю потери кормильца.",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "ежемесячная"
     },
@@ -311,12 +311,12 @@
       "cause_general_disease": 1,
       "cause_war_trauma": 1,
       "cause_radiation": 1,
-      "cause_disabled_child": null,
-      "measure_first_group": null,
-      "measure_second_group": null,
-      "measure_third_group": null,
-      "measure_disabled_child": null,
-      "measureTerms": "Денежный доход гражданина не должен превышать одного миллиона восьмисот тысяч рублей в год.",
+      "cause_disabled_child": 1,
+      "measure_first_group": "1328",
+      "measure_second_group": "1328",
+      "measure_third_group": "null",
+      "measure_disabled_child": "null",
+      "measureTerms": "Неработающим родителям - инвалидам I или II группы, проживающим в Москве и имеющим детей.",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "Ежемесячно"
     },
@@ -332,7 +332,7 @@
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "null",
-      "measureTerms": "Денежный доход гражданина не должен превышать одного миллиона восьмисот тысяч рублей в год.",
+      "measureTerms": "Отдельные категории семей с детьми компенсируют расходы в связи с ростом стоимости жизни.",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "Ежемесячно"
     },
@@ -348,25 +348,25 @@
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "null",
-      "measureTerms": "Денежный доход гражданина не должен превышать одного миллиона восьмисот тысяч рублей в год.",
+      "measureTerms": "Граждане с доходом не выше 1 млн 800 тыс. руб. в год.",
       "department": "Департамент труда и социальной защиты населения Москвы",
-      "measurePeriodicity": "null"
+      "measurePeriodicity": "Ежемесячно"
     },
     {
       "measureId": null,
       "region": "Москва",
       "measureName": "Компенсация усыновившим ребёнка-инвалида",
-      "cause_general_disease": 1,
-      "cause_war_trauma": 1,
-      "cause_radiation": 1,
+      "cause_general_disease": 0,
+      "cause_war_trauma": 0,
+      "cause_radiation": 0,
       "cause_disabled_child": 1,
       "measure_first_group": "null",
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "null",
-      "measureTerms": "один из родителей (усыновитель, опекун) ребенка",
+      "measureTerms": "Компенсация предоставляется усыновившим ребёнка-инвалида",
       "department": "Департамент труда и социальной защиты населения Москвы",
-      "measurePeriodicity": "единовременно"
+      "measurePeriodicity": "единовременная"
     },
     {
       "measureId": null,
@@ -380,7 +380,7 @@
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "1328",
-      "measureTerms": "Денежный доход гражданина не должен превышать один миллион восемьсот тысяч рублей в год",
+      "measureTerms": "Опекуны, попечители, приемные родители, патронатные воспитатели ребенка-инвалида получают ежемесячную выплату.",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "Ежемесячно"
     },
@@ -388,17 +388,17 @@
       "measureId": null,
       "region": "Москва",
       "measureName": "Вознаграждение приёмному родителю, патронатному воспитателю",
-      "cause_general_disease": null,
-      "cause_war_trauma": null,
-      "cause_radiation": null,
+      "cause_general_disease": 0,
+      "cause_war_trauma": 0,
+      "cause_radiation": 0,
       "cause_disabled_child": 1,
-      "measure_first_group": null,
-      "measure_second_group": null,
-      "measure_third_group": null,
-      "measure_disabled_child": null,
-      "measureTerms": null,
+      "measure_first_group": "null",
+      "measure_second_group": "null",
+      "measure_third_group": "null",
+      "measure_disabled_child": "null",
+      "measureTerms": "Приемные родители и патронатные воспитатели, имеющие место жительства в Москве, принявшие ребенка на воспитание, получают ежемесячное вознаграждение. Размер вознаграждения изменяется при признании ребенка инвалидом или изменении количества детей.",
       "department": "Департамент труда и социальной защиты населения Москвы",
-      "measurePeriodicity": "ежемесячно"
+      "measurePeriodicity": "ежемесячное"
     },
     {
       "measureId": null,
@@ -411,10 +411,10 @@
       "measure_first_group": "null",
       "measure_second_group": "null",
       "measure_third_group": "null",
-      "measure_disabled_child": "null",
-      "measureTerms": "после назначения ежемесячного пособия в связи с рождением и воспитанием ребенка в беззаявительном порядке (без необходимости подачи отдельного заявления), на период получения указанного ежемесячного пособия",
+      "measure_disabled_child": "бесплатное питание на молочной кухне",
+      "measureTerms": "Дети-инвалиды от 3 до 18 лет, постоянно зарегистрированные в Москве, получают бесплатное питание на молочной кухне. Для получения необходимо получить заключение врача и оформить онлайн-заявление на mos.ru. Забрать продукты можно в выбранном молочно-раздаточном пункте, предъявив QR-код.",
       "department": "Департамент здравоохранения Москвы",
-      "measurePeriodicity": "двухразовое питание (завтрак, обед"
+      "measurePeriodicity": "ежемесячно"
     },
     {
       "measureId": null,
@@ -424,13 +424,13 @@
       "cause_war_trauma": 1,
       "cause_radiation": 1,
       "cause_disabled_child": 1,
-      "measure_first_group": "бесплатный проезд",
-      "measure_second_group": "бесплатный проезд",
-      "measure_third_group": "бесплатный проезд",
-      "measure_disabled_child": "бесплатный проезд",
-      "measureTerms": "Граждане с инвалидностью, зарегистрированные в Москве, могут получить карту москвича.",
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": "Бесплатный проезд в наземном транспорте, метрополитене, МЦК, МЦД, а также на железнодорожном транспорте в пределах Москвы и области",
       "department": "ГУП города Москвы «Московский социальный регистр»",
-      "measurePeriodicity": "null"
+      "measurePeriodicity": null
     },
     {
       "measureId": null,
@@ -444,7 +444,7 @@
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "null",
-      "measureTerms": "Денежный доход гражданина не должен превышать одного миллиона восьмисот тысяч рублей в год.",
+      "measureTerms": "Граждане, имеющие заслуги в области физической культуры и спорта.",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "Ежемесячно"
     },
@@ -456,13 +456,13 @@
       "cause_war_trauma": 1,
       "cause_radiation": 1,
       "cause_disabled_child": 1,
-      "measure_first_group": "null",
-      "measure_second_group": "null",
-      "measure_third_group": "null",
+      "measure_first_group": "1328",
+      "measure_second_group": "1328",
+      "measure_third_group": "1328",
       "measure_disabled_child": "null",
-      "measureTerms": "инвалиды боевых действий в Афганистане или на Северном Кавказе",
+      "measureTerms": "Инвалидам-ветеранам боевых действий в Афганистане или на Северном Кавказе, чей годовой доход не превышает 1 млн 800 тыс. руб.",
       "department": "Департамент труда и социальной защиты населения Москвы",
-      "measurePeriodicity": "ежемесячная доплата"
+      "measurePeriodicity": "Ежемесячно"
     },
     {
       "measureId": null,
@@ -476,7 +476,7 @@
       "measure_second_group": "50%",
       "measure_third_group": "50%",
       "measure_disabled_child": "50%",
-      "measureTerms": "При использовании транспортного средства лицом, имеющим право на компенсацию, и не более чем двумя водителями.",
+      "measureTerms": "Компенсация в размере 50% от уплаченной страховой премии по ОСАГО для инвалидов, имеющих транспортное средство в соответствии с медицинскими показаниями.",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "null"
     },
@@ -484,17 +484,17 @@
       "measureId": null,
       "region": "Москва",
       "measureName": "Сертификат на отдых и оздоровление на ребёнка-инвалида и сопровождающее лицо",
-      "cause_general_disease": null,
-      "cause_war_trauma": null,
-      "cause_radiation": null,
+      "cause_general_disease": 1,
+      "cause_war_trauma": 1,
+      "cause_radiation": 1,
       "cause_disabled_child": 1,
-      "measure_first_group": null,
-      "measure_second_group": null,
-      "measure_third_group": null,
-      "measure_disabled_child": null,
-      "measureTerms": null,
+      "measure_first_group": "null",
+      "measure_second_group": "null",
+      "measure_third_group": "null",
+      "measure_disabled_child": "40000",
+      "measureTerms": "Сертификат на отдых и оздоровление для детей-инвалидов и сопровождающих лиц. Номинал сертификата на ребенка и сопровождающего — 40 000 рублей. Предоставляется детям от 4 до 17 лет. Срок использования сертификата — до 31 октября 2026 года. Завершить отдых необходимо не позднее 15 ноября 2026 года. Услуги отдыха можно приобрести только у одной организации и только на один период отдыха.",
       "department": "ГАУК «МОСГОРТУР»",
-      "measurePeriodicity": "Разовая"
+      "measurePeriodicity": "null"
     },
     {
       "measureId": null,
@@ -508,7 +508,7 @@
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "null",
-      "measureTerms": "по медицинским показаниям",
+      "measureTerms": null,
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "null"
     },
@@ -519,14 +519,14 @@
       "cause_general_disease": 1,
       "cause_war_trauma": 1,
       "cause_radiation": 1,
-      "cause_disabled_child": 1,
-      "measure_first_group": "null",
-      "measure_second_group": "null",
-      "measure_third_group": "null",
-      "measure_disabled_child": "null",
-      "measureTerms": "Необходимо иметь документы об участии в СВО и документ, подтверждающий статус жителя города Москвы.",
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
       "department": "Департамент здравоохранения Москвы",
-      "measurePeriodicity": "null"
+      "measurePeriodicity": null
     },
     {
       "measureId": null,
@@ -536,13 +536,13 @@
       "cause_war_trauma": 1,
       "cause_radiation": 1,
       "cause_disabled_child": 1,
-      "measure_first_group": "210 руб/час",
-      "measure_second_group": "210 руб/час",
-      "measure_third_group": "210 руб/час",
-      "measure_disabled_child": "210 руб/час",
-      "measureTerms": "регистрация в реестре получателей услуг, подача заявки заранее, оплата по часам",
+      "measure_first_group": "210 руб/час в Москве, 420 руб/час в области",
+      "measure_second_group": null,
+      "measure_third_group": "210 руб/час в Москве, 420 руб/час в области",
+      "measure_disabled_child": "210 руб/час в Москве, 420 руб/час в области",
+      "measureTerms": null,
       "department": "Московская городская организация Всероссийского общества инвалидов",
-      "measurePeriodicity": "лимиты: 80 часов в месяц на работу/учебу, без ограничений на лечение/реабилитацию, 20 часов в месяц в остальных случаях"
+      "measurePeriodicity": null
     },
     {
       "measureId": null,
@@ -556,7 +556,7 @@
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "null",
-      "measureTerms": "гражданам юридическим лицам и индивидуальным предпринимателям, осуществляющим деятельность в сфере социального обслуживания граждан",
+      "measureTerms": "Инвалиды получают социальные услуги на дому и в стационарной форме.",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "null"
     },
@@ -567,12 +567,12 @@
       "cause_general_disease": 1,
       "cause_war_trauma": 1,
       "cause_radiation": 1,
-      "cause_disabled_child": 1,
+      "cause_disabled_child": 0,
       "measure_first_group": "null",
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "null",
-      "measureTerms": "Получение пенсии в Москве, регистрация в Москве по месту жительства не менее 10 лет, отнесение к отдельным категориям. Общий доход пенсионера не должен превышать городского социального стандарта.",
+      "measureTerms": "Работающие пенсионеры, зарегистрированные в Москве не менее 10 лет, получают доплату к пенсии до городского социального стандарта (27 401 рубль в 2026 году).",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "ежемесячная"
     },
@@ -588,7 +588,7 @@
       "measure_second_group": "null",
       "measure_third_group": "null",
       "measure_disabled_child": "null",
-      "measureTerms": "- проживание в Москве по месту жительства;\\n- быть абонентом стационарного телефона;\\n- относиться к одной из указанных категорий.",
+      "measureTerms": "Граждане Москвы, проживающие по месту жительства, относящиеся к категориям: инвалиды Великой Отечественной войны, инвалиды боевых действий, ветераны труда, пенсионеры, одинокие пенсионеры, семьи пенсионеров, реабилитированные лица.",
       "department": "Департамент труда и социальной защиты населения Москвы",
       "measurePeriodicity": "ежемесячно"
     },
@@ -599,14 +599,14 @@
       "cause_general_disease": 1,
       "cause_war_trauma": 1,
       "cause_radiation": 1,
-      "cause_disabled_child": 1,
-      "measure_first_group": "null",
-      "measure_second_group": "null",
-      "measure_third_group": "null",
-      "measure_disabled_child": "null",
-      "measureTerms": "Освобождение от уплаты земельного налога",
+      "cause_disabled_child": null,
+      "measure_first_group": null,
+      "measure_second_group": null,
+      "measure_third_group": null,
+      "measure_disabled_child": null,
+      "measureTerms": null,
       "department": "Территориальные органы налоговой службы",
-      "measurePeriodicity": "null"
+      "measurePeriodicity": null
     }
   ]
 }
