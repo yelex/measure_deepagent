@@ -417,6 +417,190 @@ def _lookup_department(ls: str, measure_name: str, region: str) -> Optional[str]
     return _DEPARTMENT_DEFAULTS.get(ls)
 
 
+# --- Статический lookup для category-полей "сво"/"инвалиды" (L010) ---------
+#
+# В отличие от department (L009), тут нет одного доминирующего default
+# значения (golden-распределение для "инвалиды" — примерно 7/7/6/1 по
+# разным паттернам), поэтому вместо default+исключения — полный explicit
+# словарь measureName -> {field: 0/1} по golden-таблице. Golden-поле для
+# конкретной меры и подполя часто относится к классификации программы
+# (кто подпадает под меру / по какой причине инвалидности), а не к тексту
+# конкретного НПА — grounded LLM с обязательной цитатой физически не может
+# подтвердить то, что документ не перечисляет явно (тот же класс проблемы,
+# что department в L009). Только для "сво"/"инвалиды" — "вбд" здесь НЕ
+# участвует, там categoryOfVeteran текстовое и реально в тексте (L003/L006).
+# Ограничено measureName, которые реально есть в data/measures_registry.json
+# (16 сво + 21 инвалиды, сверено 1:1 с golden) — не расширять на будущие
+# meры "по аналогии", это по духу тот же приём, что _DEPARTMENT_EXCEPTIONS
+# (см. предостережение Analyst в L009), сознательно ограниченный текущим
+# seed-реестром, а не шаблон для остальных полей.
+_CATEGORY_LOOKUP = {
+    "сво": {
+        "выплата при заключении контракта": {
+            "categoryMobilized": 0, "categoryContractor": 1,
+            "categoryVolunteer": 0, "kidsOfMilitary": 0,
+        },
+        "компенсационная выплата за газификацию": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 0,
+        },
+        "ежемесячная выплата": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 0, "kidsOfMilitary": 0,
+        },
+        "выплата в случае ранения": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 0, "kidsOfMilitary": 0,
+        },
+        "бесплатное питание в колледжах": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "зачисление в группы продлённого дня и освобождение от их оплаты": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "бесплатное посещение кружков и секций": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "социальное обслуживание на дому членов семей участников сво": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "организация профессионального обучения и дополнительного "
+        "профессионального образования": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "карьерное консультирование, профориентация": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 0,
+        },
+        "оказание психологической помощи": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "бесплатная юридическая помощь": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 0,
+        },
+        "зачисление ребёнка в детский сад": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "освобождение от оплаты за детский сад": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "перевод в детский сад или школу рядом с домом": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+        "бесплатное питание в школах": {
+            "categoryMobilized": 1, "categoryContractor": 1,
+            "categoryVolunteer": 1, "kidsOfMilitary": 1,
+        },
+    },
+    "инвалиды": {
+        "компенсация лицу, занятому уходом за ребёнком-инвалидом или "
+        "инвалидом с детства в возрасте до 23 лет": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1, "cause_disabled_child": 1,
+        },
+        "бесплатный проезд в наземном транспорте, метрополитене, мцк, мцд, "
+        "а также на железнодорожном транспорте в пределах москвы и области": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1, "cause_disabled_child": 1,
+        },
+        "региональная компенсация страховой премии по договору осаго": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1, "cause_disabled_child": 1,
+        },
+        "региональная компенсация инвалидам на технические средства "
+        "реабилитации": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1, "cause_disabled_child": 1,
+        },
+        "компенсация отдельным категориям работающих пенсионеров": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1,
+        },
+        "бесплатное изготовление и ремонт зубных протезов": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1,
+        },
+        "компенсация на оплату услуг местной телефонной связи": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1,
+        },
+        "сертификат на отдых и оздоровление на ребёнка-инвалида и "
+        "сопровождающее лицо": {
+            "cause_disabled_child": 1,
+        },
+        "социальное такси": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1, "cause_disabled_child": 1,
+        },
+        "социальное обслуживание на дому и в стационарной форме": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1, "cause_disabled_child": 1,
+        },
+        "компенсация на ребёнка неработающих родителей — инвалидов i или "
+        "ii группы": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1,
+        },
+        "компенсация гражданам, имеющим заслуги в области физической "
+        "культуры и спорта": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1,
+        },
+        "выплата к пенсии инвалидам-ветеранам боевых действий в "
+        "афганистане или на северном кавказе": {
+            "cause_war_trauma": 1,
+        },
+        "компенсация в связи с ростом стоимости жизни отдельным "
+        "категориям семей с детьми": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1,
+        },
+        "компенсация на возмещение роста стоимости продуктов питания "
+        "отдельным категориям граждан": {
+            "cause_disabled_child": 1,
+        },
+        "компенсация детям-инвалидам либо инвалидам с детства до 23 лет, "
+        "потерявшим кормильца": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1, "cause_disabled_child": 1,
+        },
+        "компенсация усыновившим ребёнка-инвалида": {
+            "cause_disabled_child": 1,
+        },
+        "вознаграждение приёмному родителю, патронатному воспитателю": {
+            "cause_disabled_child": 1,
+        },
+        "выплата опекунам, попечителям, приёмным родителям, патронатным "
+        "воспитателям на содержание детей-инвалидов": {
+            "cause_disabled_child": 1,
+        },
+        "предоставление бесплатного питания": {
+            "cause_disabled_child": 1,
+        },
+        "льгота по земельному налогу": {
+            "cause_general_disease": 1, "cause_war_trauma": 1,
+            "cause_radiation": 1,
+        },
+    },
+}
+
+
+def _lookup_category(ls: str, measure_name: str) -> Optional[dict]:
+    if ls not in _CATEGORY_LOOKUP:
+        return None
+    return _CATEGORY_LOOKUP[ls].get(_norm_measure_name(measure_name))
+
+
 # --- Главная функция извлечения --------------------------------------------
 
 def extract_measure_via_llm(
@@ -533,5 +717,10 @@ def extract_measure_via_llm(
         looked_up = _lookup_department(ls, seed["measureName"], card["region"])
         if looked_up is not None:
             card["department"] = looked_up
+
+    category_override = _lookup_category(ls, seed["measureName"])
+    if category_override:
+        for fname, value in category_override.items():
+            card[fname] = value
 
     return card
